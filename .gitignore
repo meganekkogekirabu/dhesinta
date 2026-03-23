@@ -1,0 +1,4 @@
+target/
+.env
+.debug
+db/*.sqlite3

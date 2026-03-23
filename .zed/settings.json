@@ -1,0 +1,11 @@
+{
+  "lsp": {
+    "rust-analyzer": {
+      "settings": {
+        "cargo": {
+          "envFile": ".env", // should have export DATABASE_URL set
+        },
+      },
+    },
+  },
+}
