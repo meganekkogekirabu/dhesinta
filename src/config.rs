@@ -15,29 +15,45 @@
  */
 
 use log::debug;
+use rand::distr::{Alphanumeric, SampleString};
 use serde::{Deserialize, Serialize};
 
-static APP: &'static str = "condict";
+static APP: &'static str = "dhesinta";
 
-#[derive(Serialize, Deserialize)]
-pub struct CondictConfig {
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Config {
     pub db_url: String,
+    pub secret_key: String,
+    pub net: NetConfig,
 }
 
-impl CondictConfig {
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct NetConfig {
+    pub hostname: String,
+    pub port: u16,
+}
+
+impl Config {
     pub fn load() -> anyhow::Result<Self> {
         let location = confy::get_configuration_file_path(APP, Some("config"))?;
         let location = location.display();
         debug!("reading config from {location}");
-        let conf = confy::load::<CondictConfig>(APP, Some("config"))?;
+        let conf = confy::load::<Config>(APP, Some("config"))?;
         Ok(conf)
     }
 }
 
-impl Default for CondictConfig {
+impl Default for Config {
     fn default() -> Self {
+        let secret_key = Alphanumeric.sample_string(&mut rand::rng(), 32);
+
         Self {
             db_url: "sqlite://:memory:".to_string(),
+            secret_key,
+            net: NetConfig {
+                hostname: "0.0.0.0".into(),
+                port: 3000,
+            },
         }
     }
 }

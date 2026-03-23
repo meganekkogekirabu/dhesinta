@@ -14,18 +14,24 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+use log::debug;
 use sqlx::{SqlitePool, sqlite::SqliteConnectOptions};
 use std::str::FromStr;
 
-#[derive(Debug, Clone)]
+use crate::config::Config;
+
+#[derive(Clone, Debug)]
 pub struct State {
     pub db: SqlitePool,
+    pub config: Config,
 }
 
 impl State {
-    pub fn new(db_url: String) -> anyhow::Result<Self> {
-        let opts = SqliteConnectOptions::from_str(&db_url)?;
+    pub async fn new(config: Config) -> anyhow::Result<Self> {
+        debug!("opening pool at {}", config.db_url);
+        let opts = SqliteConnectOptions::from_str(&config.db_url)?;
         let db = SqlitePool::connect_lazy_with(opts);
-        Ok(Self { db })
+        sqlx::migrate!("db/migrations").run(&db).await?;
+        Ok(Self { db, config })
     }
 }

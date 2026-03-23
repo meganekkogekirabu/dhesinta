@@ -1,0 +1,6 @@
+db_url = "sqlite://./db/db.sqlite3"
+secret_key = "KTdyqgzt5yqBjbUfVW6okCioWdkw9QpS"
+
+[net]
+hostname = "0.0.0.0"
+port = "3000"

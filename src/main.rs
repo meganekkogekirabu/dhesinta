@@ -14,28 +14,18 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use axum::Router;
-use condict::state;
-use log::debug;
-use std::sync::Arc;
+use dhesinta::config::Config;
+use dhesinta::{api, state};
 
-mod api;
-mod config;
+mod app;
+use app::App;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     env_logger::init();
-    let conf = config::CondictConfig::load()?;
-
-    debug!("opening pool at {}", conf.db_url);
-    let state = state::State::new(conf.db_url)?;
-    let state = Arc::new(state);
-
-    let app = Router::new()
-        .nest("/api", api::make(state.clone()))
-        .with_state(state);
-
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await?;
-    axum::serve(listener, app).await?;
+    let config = Config::load()?;
+    let state = state::State::new(config).await?;
+    let app = App::new(state);
+    app.serve().await?;
     Ok(())
 }

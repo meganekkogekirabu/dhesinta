@@ -14,11 +14,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+use crate::entry::{Entry, Field};
+use crate::{Database, Nanoid};
 use axum::extract::{Json, Path, State};
 use axum::http::{Response, StatusCode};
 use chrono::Utc;
-use condict::entry::{Entry, Field};
-use condict::{Database, Nanoid};
 use log::error;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -32,9 +32,9 @@ pub struct CreateEntryPayload {
 }
 
 pub async fn create(
-    State(state): condict::State,
+    State(state): State<crate::state::State>,
     Json(payload): Json<CreateEntryPayload>,
-) -> condict::Result<StatusCode> {
+) -> crate::Result<StatusCode> {
     let id = Nanoid::default();
 
     let CreateEntryPayload {
@@ -76,8 +76,8 @@ struct GetEntryResponse<'a> {
 
 pub async fn get(
     Path(id): Path<String>,
-    State(state): condict::State,
-) -> condict::Result<Response<String>> {
+    State(state): State<crate::state::State>,
+) -> crate::Result<Response<String>> {
     let entry = Entry::load(id, &state.db)
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?

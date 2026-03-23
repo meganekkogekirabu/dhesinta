@@ -20,16 +20,16 @@ CREATE TABLE IF NOT EXISTS dictionaries (
     name VARCHAR(255) NOT NULL,
     description TEXT,
     visibility VARCHAR(8) NOT NULL,
-    created_at TIMESTAMP NOT NULL,
-    updated_at TIMESTAMP NOT NULL
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS entries (
     id CHAR(21) PRIMARY KEY NOT NULL UNIQUE,
     dictionary_id CHAR(21) NOT NULL,
     word TEXT NOT NULL,
-    created_at TIMESTAMP NOT NULL,
-    updated_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (dictionary_id) REFERENCES dictionaries(id) ON DELETE CASCADE
 );
 
@@ -39,4 +39,12 @@ CREATE TABLE IF NOT EXISTS entry_fields (
     field_value TEXT NOT NULL,
     PRIMARY KEY (entry_id, field_key),
     FOREIGN KEY (entry_id) REFERENCES entries(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS users (
+    id CHAR(21) PRIMARY KEY UNIQUE NOT NULL,
+    email TEXT NOT NULL UNIQUE,
+    password TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    username TEXT NOT NULL UNIQUE
 );

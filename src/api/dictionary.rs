@@ -14,12 +14,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+use crate::dictionary::{Dictionary, DictionaryVisibility};
+use crate::{Database, Nanoid};
 use axum::Json;
 use axum::extract::{Path, State};
 use axum::http::{Response, StatusCode};
 use chrono::Utc;
-use condict::dictionary::{Dictionary, DictionaryVisibility};
-use condict::{Database, Nanoid};
 use log::error;
 use serde::Deserialize;
 
@@ -33,9 +33,9 @@ pub struct CreateDictPayload {
 }
 
 pub async fn create(
-    State(state): condict::State,
+    State(state): State<crate::state::State>,
     Json(payload): Json<CreateDictPayload>,
-) -> condict::Result<StatusCode> {
+) -> crate::Result<StatusCode> {
     let now = Utc::now();
 
     let dictionary = Dictionary {
@@ -58,8 +58,8 @@ pub async fn create(
 
 pub async fn get(
     Path(id): Path<String>,
-    State(state): condict::State,
-) -> condict::Result<Response<String>> {
+    State(state): State<crate::state::State>,
+) -> crate::Result<Response<String>> {
     let dict = Dictionary::load(id, &state.db)
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?

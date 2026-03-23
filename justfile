@@ -4,7 +4,7 @@ alias i := init
 alias r := run
 
 init:
-    sqlite3 {{ location }} < ./db/schema.sql
+    touch {{ location }}
 
 run:
     cargo watch --why -w src -x run

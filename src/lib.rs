@@ -17,14 +17,15 @@
 use axum::http::StatusCode;
 use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
-use std::sync::Arc;
 
+pub mod api;
+pub mod config;
 pub mod dictionary;
 pub mod entry;
 pub mod state;
+pub mod user;
 
 pub type Result<T> = std::result::Result<T, StatusCode>;
-pub type State = axum::extract::State<Arc<state::State>>;
 
 #[derive(Clone, Debug, Deserialize, Serialize, sqlx::Type)]
 #[sqlx(transparent)]
