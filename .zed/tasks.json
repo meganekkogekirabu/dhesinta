@@ -1,0 +1,7 @@
+[
+  {
+    "label": "Run server",
+    "command": "just r",
+    "env": { "RUST_LOG": "debug" },
+  },
+]
