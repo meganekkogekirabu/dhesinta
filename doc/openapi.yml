@@ -20,6 +20,10 @@ paths:
       responses:
         "201":
           description: User was successfully created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
         "409":
           description: Email or username provided was already taken
         "500":
@@ -122,6 +126,10 @@ paths:
       responses:
         "201":
           description: Entry successfully created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Entry"
         "400":
           description: Dictionary ID given is not valid
         "500":
@@ -190,6 +198,10 @@ paths:
       responses:
         "201":
           description: Successfully created dictionary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Dictionary"
         "400":
           description: Owner ID given is invalid
         "500":
