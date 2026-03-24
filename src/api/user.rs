@@ -20,6 +20,7 @@ use axum::{Form, http::StatusCode};
 use axum_login::AuthSession;
 use log::error;
 
+use crate::error::Error;
 use crate::user::{Credentials, Registration, User};
 
 pub async fn login(
@@ -37,8 +38,8 @@ pub async fn login(
         }
     };
 
-    if let Err(err) = auth_session.login(&user).await {
-        error!("error logging in: {err}");
+    if let Err(e) = auth_session.login(&user).await {
+        error!("error logging in: {e}");
         StatusCode::INTERNAL_SERVER_ERROR
     } else {
         StatusCode::OK
@@ -59,10 +60,16 @@ pub async fn register(
     State(state): State<crate::state::State>,
     Form(payload): Form<Registration>,
 ) -> StatusCode {
-    if let Err(_) = User::register(payload, state.config.secret_key, &state.db).await {
-        StatusCode::INTERNAL_SERVER_ERROR
-    } else {
-        StatusCode::CREATED
+    match User::register(payload, state.config.secret_key, &state.db).await {
+        Err(Error::Database(e)) => {
+            if e.as_database_error().unwrap().is_unique_violation() {
+                StatusCode::CONFLICT
+            } else {
+                StatusCode::INTERNAL_SERVER_ERROR
+            }
+        }
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR,
+        Ok(_) => StatusCode::CREATED,
     }
 }
 
