@@ -91,7 +91,6 @@ pub async fn get(
     Ok(Response::new(user))
 }
 
-#[axum::debug_handler]
 pub async fn whoami(
     auth_session: AuthSession<crate::state::State>,
 ) -> Result<Response<String>, StatusCode> {
