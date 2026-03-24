@@ -15,10 +15,11 @@
  */
 
 use argonautica::{Hasher, Verifier};
+use async_trait::async_trait;
 use axum_login::{AuthUser, AuthnBackend, UserId};
 use log::{debug, error};
 use serde::{Deserialize, Serialize};
-use sqlx::{FromRow, SqlitePool};
+use sqlx::FromRow;
 
 use crate::Nanoid;
 
@@ -96,39 +97,31 @@ impl AuthnBackend for crate::state::State {
     }
 }
 
-#[derive(Deserialize)]
-pub struct Registration {
-    email: String,
-    username: String,
-    password: String,
-}
+#[async_trait]
+impl crate::Database for User {
+    fn owner(self) -> Nanoid {
+        self.id
+    }
 
-impl User {
-    pub async fn register(
-        regi: Registration,
-        secret_key: String,
-        db: &SqlitePool,
-    ) -> crate::Result<()> {
-        let mut tx = db.begin().await?;
+    async fn write(self, state: &mut crate::state::State) -> crate::Result<()> {
+        let mut tx = state.db.begin().await?;
 
         let mut hasher = Hasher::new();
         let hash = hasher
-            .with_password(regi.password)
-            .with_secret_key(secret_key)
+            .with_password(self.password)
+            .with_secret_key(state.config.secret_key.clone())
             .hash()
             .map_err(|e| {
                 error!("failed to hash password: {e}");
                 e
             })?;
 
-        let id = nanoid::nanoid!();
-
         sqlx::query!(
             "insert into users (id, email, password, username) values (?, ?, ?, ?);",
-            id,
-            regi.email,
+            self.id,
+            self.email,
             hash,
-            regi.username
+            self.username
         )
         .execute(&mut *tx)
         .await
@@ -142,12 +135,24 @@ impl User {
         Ok(())
     }
 
-    pub async fn load(id: String, db: &SqlitePool) -> crate::Result<Option<Self>> {
+    async fn delete(id: String, state: &mut crate::state::State) -> crate::Result<()> {
+        debug!("attempting to delete user {id}");
+
+        let mut tx = state.db.begin().await?;
+
+        sqlx::query!("delete from users where id = ?;", id)
+            .execute(&mut *tx)
+            .await?;
+
+        Ok(())
+    }
+
+    async fn load(id: String, state: &mut crate::state::State) -> crate::Result<Option<Self>> {
         debug!("attempting to load user {id}");
 
         let user = sqlx::query_as("select * from users where id = ?;")
             .bind(id)
-            .fetch_optional(db)
+            .fetch_optional(&state.db)
             .await?;
 
         Ok(user)

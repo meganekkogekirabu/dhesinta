@@ -14,10 +14,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use log::{debug, error};
 use serde::{Deserialize, Serialize};
-use sqlx::{FromRow, SqlitePool};
+use sqlx::FromRow;
 
 use crate::Nanoid;
 
@@ -53,8 +54,15 @@ pub struct Dictionary {
     pub updated_at: DateTime<Utc>,
 }
 
+#[async_trait]
 impl crate::Database for Dictionary {
-    async fn write(self, db: &SqlitePool) -> crate::Result<()> {
+    fn owner(self) -> Nanoid {
+        self.owner_id
+    }
+
+    async fn write(self, state: &mut crate::state::State) -> crate::Result<()> {
+        let mut tx = state.db.begin().await?;
+
         let visibility = self.visibility.as_str();
         let created_at = self.created_at.to_rfc3339();
         let updated_at = self.updated_at.to_rfc3339();
@@ -75,7 +83,7 @@ impl crate::Database for Dictionary {
             created_at,
             updated_at,
         )
-        .execute(db)
+        .execute(&mut *tx)
         .await
         .map_err(|e| {
             error!("error creating dictionary {}: {}", id, e);
@@ -85,25 +93,27 @@ impl crate::Database for Dictionary {
         Ok(())
     }
 
-    async fn load(id: String, db: &SqlitePool) -> crate::Result<Option<Self>> {
+    async fn load(id: String, state: &mut crate::state::State) -> crate::Result<Option<Self>> {
         debug!("attempting to load dictionary {id}");
 
         let dict = sqlx::query_as("select * from dictionaries where id = ?;")
             .bind(id)
-            .fetch_optional(db)
+            .fetch_optional(&state.db)
             .await?;
 
         Ok(dict)
     }
 
-    async fn delete(id: String, db: &SqlitePool) -> crate::Result<()> {
+    async fn delete(id: String, state: &mut crate::state::State) -> crate::Result<()> {
         debug!("attempting to delete dictionary {id}");
 
-        let mut tx = db.begin().await?;
+        let mut tx = state.db.begin().await?;
 
         sqlx::query!("delete from dictionaries where id = ?;", id)
             .execute(&mut *tx)
             .await?;
+
+        tx.commit().await?;
 
         Ok(())
     }

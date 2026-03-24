@@ -14,14 +14,18 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use axum::extract::{Path, State};
+use async_trait::async_trait;
+use axum::extract::Path;
 use axum::http::Response;
 use axum::{Form, http::StatusCode};
 use axum_login::AuthSession;
 use log::error;
+use serde::Deserialize;
 
+use crate::api::model::HttpModel;
 use crate::error::Error;
-use crate::user::{Credentials, Registration, User};
+use crate::user::{Credentials, User};
+use crate::{Database, Nanoid};
 
 pub async fn login(
     mut session: AuthSession<crate::state::State>,
@@ -56,41 +60,6 @@ pub async fn logout(mut session: AuthSession<crate::state::State>) -> Result<(),
     }
 }
 
-pub async fn register(
-    State(state): State<crate::state::State>,
-    Form(payload): Form<Registration>,
-) -> StatusCode {
-    match User::register(payload, state.config.secret_key, &state.db).await {
-        Err(Error::Database(e)) => {
-            if e.as_database_error().unwrap().is_unique_violation() {
-                StatusCode::CONFLICT
-            } else {
-                StatusCode::INTERNAL_SERVER_ERROR
-            }
-        }
-        Err(_) => StatusCode::INTERNAL_SERVER_ERROR,
-        Ok(_) => StatusCode::CREATED,
-    }
-}
-
-pub async fn get(
-    Path(id): Path<String>,
-    State(state): State<crate::state::State>,
-) -> Result<Response<String>, StatusCode> {
-    let user = User::load(id, &state.db)
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-
-    let user = user.ok_or(StatusCode::NOT_FOUND)?;
-
-    let user = serde_json::to_string(&user).map_err(|e| {
-        error!("could not serialise user: {e}");
-        StatusCode::INTERNAL_SERVER_ERROR
-    })?;
-
-    Ok(Response::new(user))
-}
-
 pub async fn whoami(
     session: AuthSession<crate::state::State>,
 ) -> Result<Response<String>, StatusCode> {
@@ -102,4 +71,58 @@ pub async fn whoami(
     })?;
 
     Ok(Response::new(user))
+}
+
+#[derive(Deserialize)]
+pub struct Registration {
+    email: String,
+    username: String,
+    password: String,
+}
+
+#[async_trait]
+impl HttpModel for User {
+    type Payload = Form<Registration>;
+
+    async fn http_post(
+        mut session: AuthSession<crate::state::State>,
+        Form(payload): Self::Payload,
+    ) -> StatusCode {
+        let user = User {
+            username: payload.username,
+            password: payload.password,
+            email: payload.email,
+            id: Nanoid(nanoid::nanoid!()),
+        };
+
+        match user.write(&mut session.backend).await {
+            Err(Error::Database(e)) => {
+                if e.as_database_error().unwrap().is_unique_violation() {
+                    StatusCode::CONFLICT
+                } else {
+                    StatusCode::INTERNAL_SERVER_ERROR
+                }
+            }
+            Err(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            Ok(_) => StatusCode::CREATED,
+        }
+    }
+
+    async fn http_get(
+        Path(id): Path<String>,
+        mut session: AuthSession<crate::state::State>,
+    ) -> Result<Response<String>, StatusCode> {
+        let user = User::load(id, &mut session.backend)
+            .await
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+        let user = user.ok_or(StatusCode::NOT_FOUND)?;
+
+        let user = serde_json::to_string(&user).map_err(|e| {
+            error!("could not serialise user: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+        Ok(Response::new(user))
+    }
 }

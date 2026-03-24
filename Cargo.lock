@@ -597,6 +597,7 @@ name = "dhesinta"
 version = "0.1.0"
 dependencies = [
  "argonautica",
+ "async-trait",
  "axum",
  "axum-login",
  "chrono",

@@ -14,10 +14,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use log::{debug, error};
 use serde::{Deserialize, Serialize};
-use sqlx::{FromRow, QueryBuilder, SqlitePool, SqliteTransaction};
+use sqlx::{FromRow, QueryBuilder, SqliteTransaction};
 
 use crate::Nanoid;
 
@@ -36,9 +37,14 @@ pub struct Entry {
     pub fields: Vec<Field>,
 }
 
+#[async_trait]
 impl crate::Database for Entry {
-    async fn write(self, db: &SqlitePool) -> crate::Result<()> {
-        let mut tx = db.begin().await?;
+    fn owner(self) -> Nanoid {
+        self.owner_id
+    }
+
+    async fn write(self, state: &mut crate::state::State) -> crate::Result<()> {
+        let mut tx = state.db.begin().await?;
 
         let Nanoid(dictionary_id) = self.dictionary_id;
         let Nanoid(owner_id) = self.owner_id;
@@ -71,12 +77,12 @@ impl crate::Database for Entry {
         Ok(())
     }
 
-    async fn load(id: String, db: &SqlitePool) -> crate::Result<Option<Self>> {
+    async fn load(id: String, state: &mut crate::state::State) -> crate::Result<Option<Self>> {
         debug!("attempting to load entry {id}");
 
         let entry = sqlx::query_as("select * from entries where id = ?;")
             .bind(&id)
-            .fetch_optional(db)
+            .fetch_optional(&state.db)
             .await
             .map_err(|e| {
                 error!("error finding entry {id}: {e}");
@@ -85,7 +91,7 @@ impl crate::Database for Entry {
 
         let fields: Vec<Field> = sqlx::query_as("select * from entry_fields where entry_id = ?;")
             .bind(&id)
-            .fetch_all(db)
+            .fetch_all(&state.db)
             .await
             .map_err(|e| {
                 error!("error finding fields for entry {id}: {e}");
@@ -100,10 +106,10 @@ impl crate::Database for Entry {
         Ok(entry)
     }
 
-    async fn delete(id: String, db: &SqlitePool) -> crate::Result<()> {
+    async fn delete(id: String, state: &mut crate::state::State) -> crate::Result<()> {
         debug!("attempting to delete entry {id}");
 
-        let mut tx = db.begin().await?;
+        let mut tx = state.db.begin().await?;
 
         sqlx::query!("delete from entries where id = ?;", id)
             .execute(&mut *tx)

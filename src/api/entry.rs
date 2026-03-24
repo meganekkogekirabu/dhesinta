@@ -14,10 +14,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+use crate::api::model::HttpModel;
 use crate::entry::{Entry, Field};
 use crate::error::Error;
 use crate::{Database, Nanoid};
-use axum::extract::{Json, Path, State};
+use async_trait::async_trait;
+use axum::extract::{Json, Path};
 use axum::http::{Response, StatusCode};
 use axum_login::AuthSession;
 use chrono::Utc;
@@ -27,101 +29,85 @@ use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CreateEntryPayload {
+pub struct EntryPayload {
     dictionary_id: Nanoid,
     word: String,
     fields: HashMap<String, String>,
 }
 
-pub async fn create(
-    session: AuthSession<crate::state::State>,
-    Json(payload): Json<CreateEntryPayload>,
-) -> StatusCode {
-    let id = Nanoid::default();
-
-    let CreateEntryPayload {
-        fields,
-        dictionary_id,
-        word,
-    } = payload;
-
-    let fields: Vec<_> = fields.iter().map(|f| Field::from_tuple(&id, f)).collect();
-
-    let now = Utc::now();
-
-    let entry = Entry {
-        id,
-        owner_id: session.user.unwrap().id,
-        dictionary_id,
-        word,
-        fields,
-        created_at: now,
-        updated_at: now,
-    };
-
-    match entry.write(&session.backend.db).await {
-        Ok(()) => StatusCode::CREATED,
-        Err(e) => match e {
-            Error::Database(dbe) => {
-                if dbe.as_database_error().unwrap().is_foreign_key_violation() {
-                    StatusCode::BAD_REQUEST
-                } else {
-                    StatusCode::INTERNAL_SERVER_ERROR
-                }
-            }
-            _ => StatusCode::INTERNAL_SERVER_ERROR,
-        },
-    }
-}
-
 #[derive(Serialize)]
-struct GetEntryResponse<'a> {
+struct EntryResponse<'a> {
     #[serde(flatten)]
     entry: Entry,
 
     fields: HashMap<&'a String, &'a String>,
 }
 
-pub async fn get(
-    Path(id): Path<String>,
-    State(state): State<crate::state::State>,
-) -> Result<Response<String>, StatusCode> {
-    let entry = Entry::load(id, &state.db)
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+#[async_trait]
+impl HttpModel for Entry {
+    type Payload = Json<EntryPayload>;
 
-    let entry = entry.ok_or(StatusCode::NOT_FOUND)?;
+    async fn http_post(
+        mut session: AuthSession<crate::state::State>,
+        Json(payload): Self::Payload,
+    ) -> StatusCode {
+        let id = Nanoid::default();
 
-    let fields = entry.fields.clone();
-    let fields: HashMap<_, _> = fields.iter().map(|f| (&f.key, &f.value)).collect();
+        let EntryPayload {
+            fields,
+            dictionary_id,
+            word,
+        } = payload;
 
-    let entry = GetEntryResponse { fields, entry };
+        let fields: Vec<_> = fields.iter().map(|f| Field::from_tuple(&id, f)).collect();
 
-    let entry = serde_json::to_string(&entry).map_err(|e| {
-        error!("could not serialise entry: {e}");
-        StatusCode::INTERNAL_SERVER_ERROR
-    })?;
+        let now = Utc::now();
 
-    Ok(Response::new(entry))
-}
+        let entry = Entry {
+            id,
+            owner_id: session.user.unwrap().id,
+            dictionary_id,
+            word,
+            fields,
+            created_at: now,
+            updated_at: now,
+        };
 
-pub async fn delete(
-    Path(id): Path<String>,
-    session: AuthSession<crate::state::State>,
-) -> StatusCode {
-    match Entry::load(id.to_owned(), &session.backend.db).await {
-        Ok(Some(entry)) => {
-            if entry.owner_id != session.user.unwrap().id {
-                return StatusCode::UNAUTHORIZED;
-            }
+        match entry.write(&mut session.backend).await {
+            Ok(()) => StatusCode::CREATED,
+            Err(e) => match e {
+                Error::Database(dbe) => {
+                    if dbe.as_database_error().unwrap().is_foreign_key_violation() {
+                        StatusCode::BAD_REQUEST
+                    } else {
+                        StatusCode::INTERNAL_SERVER_ERROR
+                    }
+                }
+                _ => StatusCode::INTERNAL_SERVER_ERROR,
+            },
         }
-        Ok(None) => return StatusCode::NOT_FOUND,
-        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR,
     }
 
-    if let Err(_) = Entry::delete(id, &session.backend.db).await {
-        StatusCode::INTERNAL_SERVER_ERROR
-    } else {
-        StatusCode::NO_CONTENT
+    async fn http_get(
+        Path(id): Path<String>,
+        mut session: AuthSession<crate::state::State>,
+    ) -> Result<Response<String>, StatusCode> {
+        let entry = Entry::load(id, &mut session.backend)
+            .await
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+        let entry = entry.ok_or(StatusCode::NOT_FOUND)?;
+
+        let fields = entry.fields.clone();
+        let fields: HashMap<_, _> = fields.iter().map(|f| (&f.key, &f.value)).collect();
+
+        let entry = EntryResponse { fields, entry };
+
+        let entry = serde_json::to_string(&entry).map_err(|e| {
+            error!("could not serialise entry: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+        Ok(Response::new(entry))
     }
 }

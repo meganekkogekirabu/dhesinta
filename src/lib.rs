@@ -14,8 +14,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
-use sqlx::SqlitePool;
 
 pub mod api;
 pub mod config;
@@ -37,13 +37,13 @@ impl Default for Nanoid {
     }
 }
 
+#[async_trait]
 pub trait Database: Sized {
-    fn write(self, db: &SqlitePool) -> impl std::future::Future<Output = crate::Result<()>>;
+    fn owner(self) -> Nanoid;
 
-    fn load(
-        id: String,
-        db: &SqlitePool,
-    ) -> impl std::future::Future<Output = crate::Result<Option<Self>>>;
+    async fn write(self, state: &mut crate::state::State) -> crate::Result<()>;
 
-    fn delete(id: String, db: &SqlitePool) -> impl std::future::Future<Output = crate::Result<()>>;
+    async fn load(id: String, state: &mut crate::state::State) -> crate::Result<Option<Self>>;
+
+    async fn delete(id: String, state: &mut crate::state::State) -> crate::Result<()>;
 }
