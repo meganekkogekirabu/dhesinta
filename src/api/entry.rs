@@ -87,8 +87,9 @@ pub async fn get(
 ) -> Result<Response<String>, StatusCode> {
     let entry = Entry::load(id, &state.db)
         .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
-        .map_or(Err(StatusCode::NOT_FOUND), |e| Ok(e))?;
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    let entry = entry.ok_or(StatusCode::NOT_FOUND)?;
 
     let fields = entry.fields.clone();
     let fields: HashMap<_, _> = fields.iter().map(|f| (&f.key, &f.value)).collect();

@@ -61,8 +61,9 @@ pub async fn get(
 ) -> Result<Response<String>, StatusCode> {
     let dict = Dictionary::load(id, &state.db)
         .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
-        .map_or(Err(StatusCode::NOT_FOUND), |d| Ok(d))?;
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    let dict = dict.ok_or(StatusCode::NOT_FOUND)?;
 
     let dict = serde_json::to_string(&dict).map_err(|e| {
         error!("could not serialise dictionary: {e}");
