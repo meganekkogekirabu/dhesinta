@@ -1,0 +1,322 @@
+openapi: "3.0.0"
+info:
+  contact:
+    name: Madeleine Choi
+    email: gankiann.niu@gmail.com
+  version: "0.1.0"
+  title: "Dhesinta"
+  description: Dictionary management software
+
+paths:
+  /api/users:
+    post:
+      summary: Create a new user
+      requestBody:
+        description: Credentials to create the user with
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Registration"
+      responses:
+        "201":
+          description: User was successfully created
+        "409":
+          description: Email or username provided was already taken
+        "500":
+          description: Internal database failure
+  /api/users/me:
+    get:
+      summary: Get information for currently logged in user
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Information for currently logged in user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Sender is not currently logged in
+        "500":
+          description: Internal session store or serialisation failure
+  /api/users/{id}:
+    parameters:
+      - name: id
+        in: path
+        description: ID of user to fetch
+        required: true
+        schema:
+          type: string
+          example: "w0kqftfP6hyiqrB4ocCB9"
+    get:
+      description: Get information for any user
+      responses:
+        "200":
+          description: Information for requested user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "404":
+          description: Requested user does not exist
+        "500":
+          description: Internal database or serialisation failure
+    delete:
+      description: Delete user
+      security:
+        - cookieAuth: []
+      responses:
+        "204":
+          description: Successfully deleted
+        "401":
+          description: Missing or invalid authorisation
+        "404":
+          description: Requested user does not exist
+        "500":
+          description: Internal session store or serialisation failure
+  /api/login:
+    post:
+      description: Initialise new user session
+      requestBody:
+        description: Credentials to log in with
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/Login"
+      responses:
+        "200":
+          description: Login successful
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: id=1234; HttpOnly; SameSite=Strict; Path=/; Max-Age=86400
+        "401":
+          description: Incorrect credentials
+  /api/logout:
+    get:
+      description: End user session
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Session successfully ended
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: id=; Path=/; Max-Age=0; Expires=Mon, 24 Mar 2025 13:37:34 GMT
+        "401":
+          description: Missing or invalid authorisation
+  /api/entries:
+    post:
+      security:
+        - cookieAuth: []
+      requestBody:
+        description: Information about the entry to create
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Entry"
+      responses:
+        "201":
+          description: Entry successfully created
+        "400":
+          description: Dictionary ID given is not valid
+        "500":
+          description: Internal database error
+  /api/entries/{id}:
+    parameters:
+      - name: id
+        in: path
+        description: ID of entry to fetch
+        required: true
+        schema:
+          type: string
+          example: "E-rVT42TA4IPer2FvJaNZ"
+    get:
+      responses:
+        "200":
+          description: Information for requested entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Entry"
+        "404":
+          description: Requested entry does not exist
+        "500":
+          description: Internal database or serialisation failure
+    delete:
+      description: Delete entry
+      security:
+        - cookieAuth: []
+      responses:
+        "204":
+          description: Successfully deleted
+        "401":
+          description: Missing or invalid authorisation
+        "404":
+          description: Requested entry does not exist
+        "500":
+          description: Internal session store or serialisation failure
+  /api/dictionaries:
+    post:
+      security:
+        - cookieAuth: []
+      requestBody:
+        description: Information about the dictionary to create
+        content:
+          application/json:
+            schema:
+              required:
+                - name
+                - ownerId
+                - visibility
+              properties:
+                name:
+                  type: string
+                ownerId:
+                  type: string
+                  example: w0kqftfP6hyiqrB4ocCB9
+                description:
+                  type: string
+                visibility:
+                  type: string
+                  enum:
+                    - public
+                    - unlisted
+                    - private
+      responses:
+        "201":
+          description: Successfully created dictionary
+        "400":
+          description: Owner ID given is invalid
+        "500":
+          description: Internal database error
+  /api/dictionaries/{id}:
+    parameters:
+      - name: id
+        in: path
+        description: ID of dictionary to fetch
+        required: true
+        schema:
+          type: string
+          example: "Ru-Zz-ajz8zbNIGHg89rt"
+    get:
+      responses:
+        "200":
+          description: Information for requested dictionary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Dictionary"
+        "404":
+          description: Requested dictionary does not exist
+        "500":
+          description: Internal database or serialisation failure
+    delete:
+      description: Delete entry
+      security:
+        - cookieAuth: []
+      responses:
+        "204":
+          description: Successfully deleted
+        "401":
+          description: Missing or invalid authorisation
+        "404":
+          description: Requested entry does not exist
+        "500":
+          description: Internal session store or serialisation failure
+
+components:
+  schemas:
+    Login:
+      description: Credentials for logging in as a user
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+    Registration:
+      description: Credentials for creating a new user
+      type: object
+      required:
+        - email
+        - username
+        - password
+      properties:
+        email:
+          type: string
+        username:
+          type: string
+        password:
+          type: string
+    User:
+      description: Basic information about a user
+      type: object
+      required:
+        - id
+        - username
+        - email
+      properties:
+        id:
+          type: string
+        username:
+          type: string
+        email:
+          type: string
+    Entry:
+      description: Entry information
+      type: object
+      required:
+        - dictionaryId
+        - word
+      properties:
+        dictionaryId:
+          type: string
+        word:
+          type: string
+        fields:
+          type: object
+    Dictionary:
+      description: Dictionary information
+      required:
+        - name
+        - ownerId
+        - visibility
+        - id
+        - created_at
+        - updated_at
+      properties:
+        name:
+          type: string
+        ownerId:
+          type: string
+          example: w0kqftfP6hyiqrB4ocCB9
+        description:
+          type: string
+        visibility:
+          type: string
+          enum:
+            - public
+            - unlisted
+            - private
+        created_at:
+          type: string
+          description: RFC3339 timestamp
+          example: 2026-03-24T14:04:41.012577Z
+        updated_at:
+          type: string
+          description: RFC3339 timestamp
+          example: 2026-03-24T14:04:41.012577Z
+
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: id
