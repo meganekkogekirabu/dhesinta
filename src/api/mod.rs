@@ -21,4 +21,5 @@ pub fn make() -> Router<State> {
         .route("/login", post(user::login))
         .route("/users", post(user::register))
         .route("/users/{id}", get(user::get))
+        .route("/users/me", get(user::whoami))
 }

@@ -132,6 +132,8 @@ impl User {
         .execute(&mut *tx)
         .await
         .map_err(|e| {
+            // TODO: This can happen for non-unique emails and usernames
+            // so we should send back a 409 Conflict in that case.
             error!("error creating user: {e}");
             e
         })?;
