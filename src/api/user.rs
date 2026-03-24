@@ -21,6 +21,7 @@ use axum::{Form, http::StatusCode};
 use axum_login::AuthSession;
 use log::error;
 use serde::Deserialize;
+use std::sync::Arc;
 
 use crate::api::model::HttpModel;
 use crate::error::Error;
@@ -87,7 +88,7 @@ impl HttpModel for User {
     async fn http_post(
         mut session: AuthSession<crate::state::State>,
         Form(payload): Self::Payload,
-    ) -> StatusCode {
+    ) -> Result<Response<String>, StatusCode> {
         let user = User {
             username: payload.username,
             password: payload.password,
@@ -95,16 +96,29 @@ impl HttpModel for User {
             id: Nanoid(nanoid::nanoid!()),
         };
 
-        match user.write(&mut session.backend).await {
+        let user = Arc::new(user);
+
+        match user.clone().write(&mut session.backend).await {
             Err(Error::Database(e)) => {
                 if e.as_database_error().unwrap().is_unique_violation() {
-                    StatusCode::CONFLICT
+                    Err(StatusCode::CONFLICT)
                 } else {
-                    StatusCode::INTERNAL_SERVER_ERROR
+                    Err(StatusCode::INTERNAL_SERVER_ERROR)
                 }
             }
-            Err(_) => StatusCode::INTERNAL_SERVER_ERROR,
-            Ok(_) => StatusCode::CREATED,
+            Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+            Ok(_) => match serde_json::to_string(&user) {
+                Ok(user) => {
+                    let mut response = Response::new(user);
+                    let status = response.status_mut();
+                    *status = StatusCode::CREATED;
+                    Ok(response)
+                }
+                Err(e) => {
+                    error!("error serialising user: {e}");
+                    Err(StatusCode::INTERNAL_SERVER_ERROR)
+                }
+            },
         }
     }
 

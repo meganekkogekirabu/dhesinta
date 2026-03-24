@@ -22,7 +22,7 @@ use sqlx::FromRow;
 
 use crate::Nanoid;
 
-#[derive(Debug, Default, Deserialize, Serialize, sqlx::Type)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize, sqlx::Type)]
 #[serde(rename_all = "snake_case")]
 #[sqlx(type_name = "text")]
 #[sqlx(rename_all = "snake_case")]
@@ -43,7 +43,7 @@ impl DictionaryVisibility {
     }
 }
 
-#[derive(Debug, Default, FromRow, Serialize)]
+#[derive(Clone, Debug, Default, FromRow, Serialize)]
 pub struct Dictionary {
     pub id: Nanoid,
     pub owner_id: Nanoid,
@@ -60,14 +60,14 @@ impl crate::Database for Dictionary {
         self.owner_id
     }
 
-    async fn write(self, state: &mut crate::state::State) -> crate::Result<()> {
+    async fn write(&self, state: &mut crate::state::State) -> crate::Result<()> {
         let mut tx = state.db.begin().await?;
 
         let visibility = self.visibility.as_str();
         let created_at = self.created_at.to_rfc3339();
         let updated_at = self.updated_at.to_rfc3339();
-        let Nanoid(id) = self.id;
-        let Nanoid(owner_id) = self.owner_id;
+        let Nanoid(id) = &self.id;
+        let Nanoid(owner_id) = &self.owner_id;
 
         debug!("attempting to create new dictionary {id}");
 

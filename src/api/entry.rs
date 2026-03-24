@@ -14,10 +14,6 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::api::model::HttpModel;
-use crate::entry::{Entry, Field};
-use crate::error::Error;
-use crate::{Database, Nanoid};
 use async_trait::async_trait;
 use axum::extract::{Json, Path};
 use axum::http::{Response, StatusCode};
@@ -26,6 +22,12 @@ use chrono::Utc;
 use log::error;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::sync::Arc;
+
+use crate::api::model::HttpModel;
+use crate::entry::{Entry, Field};
+use crate::error::Error;
+use crate::{Database, Nanoid};
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -50,7 +52,7 @@ impl HttpModel for Entry {
     async fn http_post(
         mut session: AuthSession<crate::state::State>,
         Json(payload): Self::Payload,
-    ) -> StatusCode {
+    ) -> Result<Response<String>, StatusCode> {
         let id = Nanoid::default();
 
         let EntryPayload {
@@ -68,22 +70,35 @@ impl HttpModel for Entry {
             owner_id: session.user.unwrap().id,
             dictionary_id,
             word,
-            fields,
+            fields: Arc::new(fields),
             created_at: now,
             updated_at: now,
         };
 
-        match entry.write(&mut session.backend).await {
-            Ok(()) => StatusCode::CREATED,
+        let entry = Arc::new(entry);
+
+        match entry.clone().write(&mut session.backend).await {
+            Ok(_) => match serde_json::to_string(&entry) {
+                Ok(entry) => {
+                    let mut response = Response::new(entry);
+                    let status = response.status_mut();
+                    *status = StatusCode::CREATED;
+                    Ok(response)
+                }
+                Err(e) => {
+                    error!("error serialising user: {e}");
+                    Err(StatusCode::INTERNAL_SERVER_ERROR)
+                }
+            },
             Err(e) => match e {
                 Error::Database(dbe) => {
                     if dbe.as_database_error().unwrap().is_foreign_key_violation() {
-                        StatusCode::BAD_REQUEST
+                        Err(StatusCode::BAD_REQUEST)
                     } else {
-                        StatusCode::INTERNAL_SERVER_ERROR
+                        Err(StatusCode::INTERNAL_SERVER_ERROR)
                     }
                 }
-                _ => StatusCode::INTERNAL_SERVER_ERROR,
+                _ => Err(StatusCode::INTERNAL_SERVER_ERROR),
             },
         }
     }

@@ -14,16 +14,19 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+use async_trait::async_trait;
+use axum::Json;
+use axum::http::{Response, StatusCode};
+use axum_login::AuthSession;
+use chrono::Utc;
+use log::error;
+use serde::Deserialize;
+use std::sync::Arc;
+
 use crate::api::model::HttpModel;
 use crate::dictionary::{Dictionary, DictionaryVisibility};
 use crate::error::Error;
 use crate::{Database, Nanoid};
-use async_trait::async_trait;
-use axum::Json;
-use axum::http::StatusCode;
-use axum_login::AuthSession;
-use chrono::Utc;
-use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -41,7 +44,7 @@ impl HttpModel for Dictionary {
     async fn http_post(
         mut session: AuthSession<crate::state::State>,
         Json(payload): Self::Payload,
-    ) -> StatusCode {
+    ) -> Result<Response<String>, StatusCode> {
         let now = Utc::now();
 
         let dictionary = Self {
@@ -54,16 +57,29 @@ impl HttpModel for Dictionary {
             ..Default::default()
         };
 
-        match dictionary.write(&mut session.backend).await {
+        let dictionary = Arc::new(dictionary);
+
+        match dictionary.clone().write(&mut session.backend).await {
+            Ok(_) => match serde_json::to_string(&dictionary) {
+                Ok(dictionary) => {
+                    let mut response = Response::new(dictionary);
+                    let status = response.status_mut();
+                    *status = StatusCode::CREATED;
+                    Ok(response)
+                }
+                Err(e) => {
+                    error!("error serialising user: {e}");
+                    Err(StatusCode::INTERNAL_SERVER_ERROR)
+                }
+            },
             Err(Error::Database(e)) => {
                 if e.as_database_error().unwrap().is_foreign_key_violation() {
-                    StatusCode::BAD_REQUEST
+                    Err(StatusCode::BAD_REQUEST)
                 } else {
-                    StatusCode::INTERNAL_SERVER_ERROR
+                    Err(StatusCode::INTERNAL_SERVER_ERROR)
                 }
             }
-            Err(_) => StatusCode::INTERNAL_SERVER_ERROR,
-            Ok(_) => StatusCode::CREATED,
+            Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
         }
     }
 }

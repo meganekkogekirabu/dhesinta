@@ -19,10 +19,11 @@ use chrono::{DateTime, Utc};
 use log::{debug, error};
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, QueryBuilder, SqliteTransaction};
+use std::sync::Arc;
 
 use crate::Nanoid;
 
-#[derive(Debug, Default, Deserialize, FromRow, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, FromRow, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Entry {
     pub id: Nanoid,
@@ -34,7 +35,7 @@ pub struct Entry {
 
     #[sqlx(skip)]
     #[serde(skip)]
-    pub fields: Vec<Field>,
+    pub fields: Arc<Vec<Field>>,
 }
 
 #[async_trait]
@@ -43,12 +44,12 @@ impl crate::Database for Entry {
         self.owner_id
     }
 
-    async fn write(self, state: &mut crate::state::State) -> crate::Result<()> {
+    async fn write(&self, state: &mut crate::state::State) -> crate::Result<()> {
         let mut tx = state.db.begin().await?;
 
-        let Nanoid(dictionary_id) = self.dictionary_id;
-        let Nanoid(owner_id) = self.owner_id;
-        let Nanoid(id) = self.id;
+        let Nanoid(dictionary_id) = &self.dictionary_id;
+        let Nanoid(owner_id) = &self.owner_id;
+        let Nanoid(id) = &self.id;
         let created_at = self.created_at.to_rfc3339();
         let updated_at = self.updated_at.to_rfc3339();
 
@@ -72,7 +73,7 @@ impl crate::Database for Entry {
             e
         })?;
 
-        write_fields(self.fields, tx).await?;
+        write_fields(self.fields.clone(), tx).await?;
 
         Ok(())
     }
@@ -99,7 +100,7 @@ impl crate::Database for Entry {
             })?;
 
         let entry = entry.map(|mut e: Entry| {
-            e.fields = fields;
+            e.fields = Arc::new(fields);
             e
         });
 
@@ -149,7 +150,10 @@ impl Field {
 
 const BIND_LIMIT: usize = 65535;
 
-async fn write_fields<'c>(fields: Vec<Field>, mut tx: SqliteTransaction<'c>) -> crate::Result<()> {
+async fn write_fields<'c>(
+    fields: Arc<Vec<Field>>,
+    mut tx: SqliteTransaction<'c>,
+) -> crate::Result<()> {
     let mut query: QueryBuilder<'_, sqlx::Sqlite> =
         QueryBuilder::new("insert into entry_fields (entry_id, field_key, field_value) ");
 

@@ -11,18 +11,17 @@ pub trait HttpModel: crate::Database + Serialize {
         Path(id): Path<String>,
         mut session: AuthSession<crate::state::State>,
     ) -> Result<Response<String>, StatusCode> {
-        let model = Self::load(id, &mut session.backend)
-            .await
-            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-
-        let model = model.ok_or(StatusCode::NOT_FOUND)?;
-
-        let model = serde_json::to_string(&model).map_err(|e| {
-            error!("could not serialise model: {e}");
-            StatusCode::INTERNAL_SERVER_ERROR
-        })?;
-
-        Ok(Response::new(model))
+        match Self::load(id, &mut session.backend).await {
+            Ok(Some(model)) => match serde_json::to_string(&model) {
+                Ok(model) => Ok(Response::new(model)),
+                Err(e) => {
+                    error!("could not serialise model: {e}");
+                    Err(StatusCode::INTERNAL_SERVER_ERROR)
+                }
+            },
+            Ok(None) => Err(StatusCode::NOT_FOUND),
+            Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+        }
     }
 
     async fn http_delete(
@@ -42,7 +41,7 @@ pub trait HttpModel: crate::Database + Serialize {
         if let Err(_) = Self::delete(id, &mut session.backend).await {
             StatusCode::INTERNAL_SERVER_ERROR
         } else {
-            StatusCode::OK
+            StatusCode::NO_CONTENT
         }
     }
 
@@ -53,5 +52,5 @@ pub trait HttpModel: crate::Database + Serialize {
     async fn http_post(
         session: AuthSession<crate::state::State>,
         payload: Self::Payload,
-    ) -> StatusCode;
+    ) -> Result<Response<String>, StatusCode>;
 }

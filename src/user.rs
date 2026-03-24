@@ -103,12 +103,12 @@ impl crate::Database for User {
         self.id
     }
 
-    async fn write(self, state: &mut crate::state::State) -> crate::Result<()> {
+    async fn write(&self, state: &mut crate::state::State) -> crate::Result<()> {
         let mut tx = state.db.begin().await?;
 
         let mut hasher = Hasher::new();
         let hash = hasher
-            .with_password(self.password)
+            .with_password(&self.password)
             .with_secret_key(state.config.secret_key.clone())
             .hash()
             .map_err(|e| {
