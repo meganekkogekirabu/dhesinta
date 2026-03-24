@@ -61,7 +61,13 @@ pub async fn create(
     match entry.write(&state.db).await {
         Ok(()) => StatusCode::CREATED,
         Err(e) => match e {
-            Error::Database(_) => StatusCode::BAD_REQUEST,
+            Error::Database(dbe) => {
+                if dbe.as_database_error().unwrap().is_foreign_key_violation() {
+                    StatusCode::BAD_REQUEST
+                } else {
+                    StatusCode::INTERNAL_SERVER_ERROR
+                }
+            }
             _ => StatusCode::INTERNAL_SERVER_ERROR,
         },
     }
