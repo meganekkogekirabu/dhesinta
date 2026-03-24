@@ -15,6 +15,7 @@
  */
 
 use crate::dictionary::{Dictionary, DictionaryVisibility};
+use crate::error::Error;
 use crate::{Database, Nanoid};
 use axum::Json;
 use axum::extract::{Path, State};
@@ -48,10 +49,16 @@ pub async fn create(
         ..Default::default()
     };
 
-    if let Err(_) = dictionary.write(&state.db).await {
-        StatusCode::INTERNAL_SERVER_ERROR
-    } else {
-        StatusCode::CREATED
+    match dictionary.write(&state.db).await {
+        Err(Error::Database(e)) => {
+            if e.as_database_error().unwrap().is_foreign_key_violation() {
+                StatusCode::BAD_REQUEST
+            } else {
+                StatusCode::INTERNAL_SERVER_ERROR
+            }
+        }
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR,
+        Ok(_) => StatusCode::CREATED,
     }
 }
 
