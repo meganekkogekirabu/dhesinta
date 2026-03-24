@@ -14,6 +14,7 @@ pub fn make() -> Router<State> {
         .route("/dictionaries", post(dictionary::create))
         .route("/entries", post(entry::create))
         .route("/logout", get(user::logout))
+        .route("/users/me", get(user::whoami))
         .route_layer(login_required!(State))
         // unprotected
         .route("/dictionaries/{id}", get(dictionary::get))
@@ -21,5 +22,4 @@ pub fn make() -> Router<State> {
         .route("/login", post(user::login))
         .route("/users", post(user::register))
         .route("/users/{id}", get(user::get))
-        .route("/users/me", get(user::whoami))
 }
