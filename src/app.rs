@@ -50,7 +50,7 @@ impl App {
 
         let app = Router::new()
             .with_state(self.state.clone())
-            .nest("/api", api::make().with_state(self.state.clone()))
+            .nest("/api/v1", api::make().with_state(self.state.clone()))
             .layer(auth_layer);
 
         let NetConfig { hostname, port } = self.state.config.net;

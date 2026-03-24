@@ -8,7 +8,7 @@ info:
   description: Dictionary management software
 
 paths:
-  /api/users:
+  /api/v1/users:
     post:
       summary: Create a new user
       requestBody:
@@ -28,7 +28,7 @@ paths:
           description: Email or username provided was already taken
         "500":
           description: Internal database failure
-  /api/users/me:
+  /api/v1/users/me:
     get:
       summary: Get information for currently logged in user
       security:
@@ -44,7 +44,7 @@ paths:
           description: Sender is not currently logged in
         "500":
           description: Internal session store or serialisation failure
-  /api/users/{id}:
+  /api/v1/users/{id}:
     parameters:
       - name: id
         in: path
@@ -79,7 +79,7 @@ paths:
           description: Requested user does not exist
         "500":
           description: Internal session store or serialisation failure
-  /api/login:
+  /api/v1/login:
     post:
       description: Initialise new user session
       requestBody:
@@ -98,7 +98,7 @@ paths:
                 example: id=1234; HttpOnly; SameSite=Strict; Path=/; Max-Age=86400
         "401":
           description: Incorrect credentials
-  /api/logout:
+  /api/v1/logout:
     get:
       description: End user session
       security:
@@ -113,7 +113,7 @@ paths:
                 example: id=; Path=/; Max-Age=0; Expires=Mon, 24 Mar 2025 13:37:34 GMT
         "401":
           description: Missing or invalid authorisation
-  /api/entries:
+  /api/v1/entries:
     post:
       security:
         - cookieAuth: []
@@ -134,7 +134,7 @@ paths:
           description: Dictionary ID given is not valid
         "500":
           description: Internal database error
-  /api/entries/{id}:
+  /api/v1/entries/{id}:
     parameters:
       - name: id
         in: path
@@ -168,7 +168,7 @@ paths:
           description: Requested entry does not exist
         "500":
           description: Internal session store or serialisation failure
-  /api/dictionaries:
+  /api/v1/dictionaries:
     post:
       security:
         - cookieAuth: []
@@ -206,7 +206,7 @@ paths:
           description: Owner ID given is invalid
         "500":
           description: Internal database error
-  /api/dictionaries/{id}:
+  /api/v1/dictionaries/{id}:
     parameters:
       - name: id
         in: path
