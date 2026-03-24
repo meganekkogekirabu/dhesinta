@@ -27,7 +27,7 @@ pub mod user;
 
 pub type Result<T> = std::result::Result<T, crate::error::Error>;
 
-#[derive(Clone, Debug, Deserialize, Serialize, sqlx::Type)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize, sqlx::Type)]
 #[sqlx(transparent)]
 pub struct Nanoid(pub String);
 
@@ -44,4 +44,6 @@ pub trait Database: Sized {
         id: String,
         db: &SqlitePool,
     ) -> impl std::future::Future<Output = crate::Result<Option<Self>>>;
+
+    fn delete(id: String, db: &SqlitePool) -> impl std::future::Future<Output = crate::Result<()>>;
 }

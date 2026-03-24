@@ -20,6 +20,7 @@ use crate::{Database, Nanoid};
 use axum::Json;
 use axum::extract::{Path, State};
 use axum::http::{Response, StatusCode};
+use axum_login::AuthSession;
 use chrono::Utc;
 use log::error;
 use serde::Deserialize;
@@ -78,4 +79,25 @@ pub async fn get(
     })?;
 
     Ok(Response::new(dict))
+}
+
+pub async fn delete(
+    Path(id): Path<String>,
+    session: AuthSession<crate::state::State>,
+) -> StatusCode {
+    match Dictionary::load(id.to_owned(), &session.backend.db).await {
+        Ok(Some(entry)) => {
+            if entry.owner_id != session.user.unwrap().id {
+                return StatusCode::UNAUTHORIZED;
+            }
+        }
+        Ok(None) => return StatusCode::NOT_FOUND,
+        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR,
+    }
+
+    if let Err(_) = Dictionary::delete(id, &session.backend.db).await {
+        StatusCode::INTERNAL_SERVER_ERROR
+    } else {
+        StatusCode::NO_CONTENT
+    }
 }

@@ -95,4 +95,16 @@ impl crate::Database for Dictionary {
 
         Ok(dict)
     }
+
+    async fn delete(id: String, db: &SqlitePool) -> crate::Result<()> {
+        debug!("attempting to delete dictionary {id}");
+
+        let mut tx = db.begin().await?;
+
+        sqlx::query!("delete from dictionaries where id = ?;", id)
+            .execute(&mut *tx)
+            .await?;
+
+        Ok(())
+    }
 }

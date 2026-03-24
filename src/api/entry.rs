@@ -19,6 +19,7 @@ use crate::error::Error;
 use crate::{Database, Nanoid};
 use axum::extract::{Json, Path, State};
 use axum::http::{Response, StatusCode};
+use axum_login::AuthSession;
 use chrono::Utc;
 use log::error;
 use serde::{Deserialize, Serialize};
@@ -33,7 +34,7 @@ pub struct CreateEntryPayload {
 }
 
 pub async fn create(
-    State(state): State<crate::state::State>,
+    session: AuthSession<crate::state::State>,
     Json(payload): Json<CreateEntryPayload>,
 ) -> StatusCode {
     let id = Nanoid::default();
@@ -50,15 +51,15 @@ pub async fn create(
 
     let entry = Entry {
         id,
+        owner_id: session.user.unwrap().id,
         dictionary_id,
         word,
         fields,
         created_at: now,
         updated_at: now,
-        ..Default::default()
     };
 
-    match entry.write(&state.db).await {
+    match entry.write(&session.backend.db).await {
         Ok(()) => StatusCode::CREATED,
         Err(e) => match e {
             Error::Database(dbe) => {
@@ -102,4 +103,25 @@ pub async fn get(
     })?;
 
     Ok(Response::new(entry))
+}
+
+pub async fn delete(
+    Path(id): Path<String>,
+    session: AuthSession<crate::state::State>,
+) -> StatusCode {
+    match Entry::load(id.to_owned(), &session.backend.db).await {
+        Ok(Some(entry)) => {
+            if entry.owner_id != session.user.unwrap().id {
+                return StatusCode::UNAUTHORIZED;
+            }
+        }
+        Ok(None) => return StatusCode::NOT_FOUND,
+        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR,
+    }
+
+    if let Err(_) = Entry::delete(id, &session.backend.db).await {
+        StatusCode::INTERNAL_SERVER_ERROR
+    } else {
+        StatusCode::NO_CONTENT
+    }
 }

@@ -26,6 +26,7 @@ use crate::Nanoid;
 pub struct Entry {
     pub id: Nanoid,
     pub dictionary_id: Nanoid,
+    pub owner_id: Nanoid,
     pub word: String,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -40,6 +41,7 @@ impl crate::Database for Entry {
         let mut tx = db.begin().await?;
 
         let Nanoid(dictionary_id) = self.dictionary_id;
+        let Nanoid(owner_id) = self.owner_id;
         let Nanoid(id) = self.id;
         let created_at = self.created_at.to_rfc3339();
         let updated_at = self.updated_at.to_rfc3339();
@@ -48,9 +50,10 @@ impl crate::Database for Entry {
 
         sqlx::query!(
             "insert into entries (
-                id, dictionary_id, word, created_at, updated_at
-            ) values (?, ?, ?, ?, ?);",
+                id, owner_id, dictionary_id, word, created_at, updated_at
+            ) values (?, ?, ?, ?, ?, ?);",
             id,
+            owner_id,
             dictionary_id,
             self.word,
             created_at,
@@ -95,6 +98,18 @@ impl crate::Database for Entry {
         });
 
         Ok(entry)
+    }
+
+    async fn delete(id: String, db: &SqlitePool) -> crate::Result<()> {
+        debug!("attempting to delete entry {id}");
+
+        let mut tx = db.begin().await?;
+
+        sqlx::query!("delete from entries where id = ?;", id)
+            .execute(&mut *tx)
+            .await?;
+
+        Ok(())
     }
 }
 

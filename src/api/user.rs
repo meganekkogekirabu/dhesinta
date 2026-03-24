@@ -24,10 +24,10 @@ use crate::error::Error;
 use crate::user::{Credentials, Registration, User};
 
 pub async fn login(
-    mut auth_session: AuthSession<crate::state::State>,
+    mut session: AuthSession<crate::state::State>,
     Form(creds): Form<Credentials>,
 ) -> StatusCode {
-    let user = match auth_session.authenticate(creds).await {
+    let user = match session.authenticate(creds).await {
         Ok(Some(user)) => user,
         Ok(None) => {
             return StatusCode::UNAUTHORIZED;
@@ -38,7 +38,7 @@ pub async fn login(
         }
     };
 
-    if let Err(e) = auth_session.login(&user).await {
+    if let Err(e) = session.login(&user).await {
         error!("error logging in: {e}");
         StatusCode::INTERNAL_SERVER_ERROR
     } else {
@@ -46,8 +46,8 @@ pub async fn login(
     }
 }
 
-pub async fn logout(mut auth_session: AuthSession<crate::state::State>) -> Result<(), StatusCode> {
-    match auth_session.logout().await {
+pub async fn logout(mut session: AuthSession<crate::state::State>) -> Result<(), StatusCode> {
+    match session.logout().await {
         Ok(_) => Ok(()),
         Err(e) => {
             error!("error logging out: {e}");
@@ -92,9 +92,9 @@ pub async fn get(
 }
 
 pub async fn whoami(
-    auth_session: AuthSession<crate::state::State>,
+    session: AuthSession<crate::state::State>,
 ) -> Result<Response<String>, StatusCode> {
-    let user = &auth_session.user.unwrap(); // We should have a guarantee from login_required! that user is not None.
+    let user = &session.user.unwrap(); // We should have a guarantee from login_required! that user is not None.
 
     let user = serde_json::to_string(&user).map_err(|e| {
         error!("could not serialise user: {e}");

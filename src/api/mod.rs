@@ -1,5 +1,5 @@
 use axum::Router;
-use axum::routing::{get, post};
+use axum::routing::{delete, get, post};
 use axum_login::login_required;
 
 use crate::state::State;
@@ -13,6 +13,8 @@ pub fn make() -> Router<State> {
         // protected
         .route("/dictionaries", post(dictionary::create))
         .route("/entries", post(entry::create))
+        .route("/dictionaries/{id}", delete(dictionary::delete))
+        .route("/entries/{id}", delete(entry::delete))
         .route("/logout", get(user::logout))
         .route("/users/me", get(user::whoami))
         .route_layer(login_required!(State))
