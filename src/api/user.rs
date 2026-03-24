@@ -88,6 +88,11 @@ pub async fn whoami(
     auth_session: AuthSession<crate::state::State>,
 ) -> crate::Result<Response<String>> {
     let user = &auth_session.user.unwrap(); // We should have a guarantee from login_required! that user is not None.
-    let user = serde_json::to_string(&user).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    let user = serde_json::to_string(&user).map_err(|e| {
+        error!("could not serialise user: {e}");
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
     Ok(Response::new(user))
 }
