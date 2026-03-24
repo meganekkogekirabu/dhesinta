@@ -35,7 +35,7 @@ impl App {
         Self { state }
     }
 
-    pub async fn serve(self) -> anyhow::Result<()> {
+    pub async fn serve(self) -> dhesinta::Result<()> {
         let session_store = SqliteStore::new(self.state.db.clone());
         session_store.migrate().await?;
 

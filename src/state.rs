@@ -27,7 +27,7 @@ pub struct State {
 }
 
 impl State {
-    pub async fn new(config: Config) -> anyhow::Result<Self> {
+    pub async fn new(config: Config) -> crate::Result<Self> {
         debug!("opening pool at {}", config.db_url);
         let opts = SqliteConnectOptions::from_str(&config.db_url)?;
         let db = SqlitePool::connect_lazy_with(opts);

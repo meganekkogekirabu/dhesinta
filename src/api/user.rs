@@ -25,27 +25,27 @@ use crate::user::{Credentials, Registration, User};
 pub async fn login(
     mut auth_session: AuthSession<crate::state::State>,
     Form(creds): Form<Credentials>,
-) -> crate::Result<()> {
+) -> StatusCode {
     let user = match auth_session.authenticate(creds).await {
         Ok(Some(user)) => user,
         Ok(None) => {
-            return Err(StatusCode::UNAUTHORIZED);
+            return StatusCode::UNAUTHORIZED;
         }
         Err(e) => {
             error!("error authenticating: {e}");
-            return Err(StatusCode::INTERNAL_SERVER_ERROR);
+            return StatusCode::INTERNAL_SERVER_ERROR;
         }
     };
 
     if let Err(err) = auth_session.login(&user).await {
         error!("error logging in: {err}");
-        return Err(StatusCode::INTERNAL_SERVER_ERROR);
+        StatusCode::INTERNAL_SERVER_ERROR
+    } else {
+        StatusCode::OK
     }
-
-    Ok(())
 }
 
-pub async fn logout(mut auth_session: AuthSession<crate::state::State>) -> crate::Result<()> {
+pub async fn logout(mut auth_session: AuthSession<crate::state::State>) -> Result<(), StatusCode> {
     match auth_session.logout().await {
         Ok(_) => Ok(()),
         Err(e) => {
@@ -58,22 +58,23 @@ pub async fn logout(mut auth_session: AuthSession<crate::state::State>) -> crate
 pub async fn register(
     State(state): State<crate::state::State>,
     Form(payload): Form<Registration>,
-) -> crate::Result<StatusCode> {
-    User::register(payload, state.config.secret_key, &state.db)
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-
-    Ok(StatusCode::CREATED)
+) -> StatusCode {
+    if let Err(_) = User::register(payload, state.config.secret_key, &state.db).await {
+        StatusCode::INTERNAL_SERVER_ERROR
+    } else {
+        StatusCode::CREATED
+    }
 }
 
 pub async fn get(
     Path(id): Path<String>,
     State(state): State<crate::state::State>,
-) -> crate::Result<Response<String>> {
+) -> Result<Response<String>, StatusCode> {
     let user = User::load(id, &state.db)
         .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
-        .map_or(Err(StatusCode::NOT_FOUND), |d| Ok(d))?;
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    let user = user.ok_or(StatusCode::NOT_FOUND)?;
 
     let user = serde_json::to_string(&user).map_err(|e| {
         error!("could not serialise user: {e}");
@@ -86,7 +87,7 @@ pub async fn get(
 #[axum::debug_handler]
 pub async fn whoami(
     auth_session: AuthSession<crate::state::State>,
-) -> crate::Result<Response<String>> {
+) -> Result<Response<String>, StatusCode> {
     let user = &auth_session.user.unwrap(); // We should have a guarantee from login_required! that user is not None.
 
     let user = serde_json::to_string(&user).map_err(|e| {

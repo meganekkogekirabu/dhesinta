@@ -596,7 +596,6 @@ dependencies = [
 name = "dhesinta"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "argonautica",
  "axum",
  "axum-login",
@@ -609,6 +608,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sqlx",
+ "thiserror 2.0.18",
  "tokio",
  "tower-sessions",
  "tower-sessions-sqlx-store",

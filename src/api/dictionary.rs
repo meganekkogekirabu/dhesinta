@@ -35,7 +35,7 @@ pub struct CreateDictPayload {
 pub async fn create(
     State(state): State<crate::state::State>,
     Json(payload): Json<CreateDictPayload>,
-) -> crate::Result<StatusCode> {
+) -> StatusCode {
     let now = Utc::now();
 
     let dictionary = Dictionary {
@@ -48,18 +48,17 @@ pub async fn create(
         ..Default::default()
     };
 
-    dictionary
-        .write(&state.db)
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-
-    Ok(StatusCode::CREATED)
+    if let Err(_) = dictionary.write(&state.db).await {
+        StatusCode::INTERNAL_SERVER_ERROR
+    } else {
+        StatusCode::CREATED
+    }
 }
 
 pub async fn get(
     Path(id): Path<String>,
     State(state): State<crate::state::State>,
-) -> crate::Result<Response<String>> {
+) -> Result<Response<String>, StatusCode> {
     let dict = Dictionary::load(id, &state.db)
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?

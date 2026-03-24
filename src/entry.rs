@@ -36,7 +36,7 @@ pub struct Entry {
 }
 
 impl crate::Database for Entry {
-    async fn write(self, db: &SqlitePool) -> anyhow::Result<()> {
+    async fn write(self, db: &SqlitePool) -> crate::Result<()> {
         let mut tx = db.begin().await?;
 
         let Nanoid(dictionary_id) = self.dictionary_id;
@@ -68,7 +68,7 @@ impl crate::Database for Entry {
         Ok(())
     }
 
-    async fn load(id: String, db: &SqlitePool) -> anyhow::Result<Option<Self>> {
+    async fn load(id: String, db: &SqlitePool) -> crate::Result<Option<Self>> {
         debug!("attempting to load entry {id}");
 
         let entry = sqlx::query_as("select * from entries where id = ?;")
@@ -128,7 +128,7 @@ impl Field {
 
 const BIND_LIMIT: usize = 65535;
 
-async fn write_fields<'c>(fields: Vec<Field>, mut tx: SqliteTransaction<'c>) -> anyhow::Result<()> {
+async fn write_fields<'c>(fields: Vec<Field>, mut tx: SqliteTransaction<'c>) -> crate::Result<()> {
     let mut query: QueryBuilder<'_, sqlx::Sqlite> =
         QueryBuilder::new("insert into entry_fields (entry_id, field_key, field_value) ");
 

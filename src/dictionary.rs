@@ -54,7 +54,7 @@ pub struct Dictionary {
 }
 
 impl crate::Database for Dictionary {
-    async fn write(self, db: &SqlitePool) -> anyhow::Result<()> {
+    async fn write(self, db: &SqlitePool) -> crate::Result<()> {
         let visibility = self.visibility.as_str();
         let created_at = self.created_at.to_rfc3339();
         let updated_at = self.updated_at.to_rfc3339();
@@ -85,7 +85,7 @@ impl crate::Database for Dictionary {
         Ok(())
     }
 
-    async fn load(id: String, db: &SqlitePool) -> anyhow::Result<Option<Self>> {
+    async fn load(id: String, db: &SqlitePool) -> crate::Result<Option<Self>> {
         debug!("attempting to load dictionary {id}");
 
         let dict = sqlx::query_as("select * from dictionaries where id = ?;")

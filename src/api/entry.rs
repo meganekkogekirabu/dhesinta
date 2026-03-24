@@ -15,6 +15,7 @@
  */
 
 use crate::entry::{Entry, Field};
+use crate::error::Error;
 use crate::{Database, Nanoid};
 use axum::extract::{Json, Path, State};
 use axum::http::{Response, StatusCode};
@@ -34,7 +35,7 @@ pub struct CreateEntryPayload {
 pub async fn create(
     State(state): State<crate::state::State>,
     Json(payload): Json<CreateEntryPayload>,
-) -> crate::Result<StatusCode> {
+) -> StatusCode {
     let id = Nanoid::default();
 
     let CreateEntryPayload {
@@ -58,10 +59,10 @@ pub async fn create(
     };
 
     match entry.write(&state.db).await {
-        Ok(()) => Ok(StatusCode::CREATED),
-        Err(e) => match e.downcast().unwrap() {
-            sqlx::Error::Database(_) => Err(StatusCode::BAD_REQUEST),
-            _ => Err(StatusCode::INTERNAL_SERVER_ERROR),
+        Ok(()) => StatusCode::CREATED,
+        Err(e) => match e {
+            Error::Database(_) => StatusCode::BAD_REQUEST,
+            _ => StatusCode::INTERNAL_SERVER_ERROR,
         },
     }
 }
@@ -77,7 +78,7 @@ struct GetEntryResponse<'a> {
 pub async fn get(
     Path(id): Path<String>,
     State(state): State<crate::state::State>,
-) -> crate::Result<Response<String>> {
+) -> Result<Response<String>, StatusCode> {
     let entry = Entry::load(id, &state.db)
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?

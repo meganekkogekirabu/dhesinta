@@ -34,7 +34,7 @@ pub struct NetConfig {
 }
 
 impl Config {
-    pub fn load() -> anyhow::Result<Self> {
+    pub fn load() -> crate::Result<Self> {
         let location = confy::get_configuration_file_path(APP, Some("config"))?;
         let location = location.display();
         debug!("reading config from {location}");

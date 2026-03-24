@@ -21,7 +21,7 @@ mod app;
 use app::App;
 
 #[tokio::main]
-async fn main() -> anyhow::Result<()> {
+async fn main() -> dhesinta::Result<()> {
     env_logger::init();
     let config = Config::load()?;
     let state = state::State::new(config).await?;

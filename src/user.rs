@@ -14,7 +14,6 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use anyhow::anyhow;
 use argonautica::{Hasher, Verifier};
 use axum_login::{AuthUser, AuthnBackend, UserId};
 use log::{debug, error};
@@ -38,7 +37,6 @@ impl std::fmt::Debug for User {
         f.debug_struct("User")
             .field("id", &self.id)
             .field("email", &self.email)
-            .field("password", &"<redacted>")
             .field("username", &self.username)
             .finish()
     }
@@ -110,7 +108,7 @@ impl User {
         regi: Registration,
         secret_key: String,
         db: &SqlitePool,
-    ) -> anyhow::Result<()> {
+    ) -> crate::Result<()> {
         let mut tx = db.begin().await?;
 
         let mut hasher = Hasher::new();
@@ -118,7 +116,10 @@ impl User {
             .with_password(regi.password)
             .with_secret_key(secret_key)
             .hash()
-            .map_err(|e| anyhow!("failed to hash password: {e}"))?;
+            .map_err(|e| {
+                error!("failed to hash password: {e}");
+                e
+            })?;
 
         let id = nanoid::nanoid!();
 
@@ -132,8 +133,6 @@ impl User {
         .execute(&mut *tx)
         .await
         .map_err(|e| {
-            // TODO: This can happen for non-unique emails and usernames
-            // so we should send back a 409 Conflict in that case.
             error!("error creating user: {e}");
             e
         })?;
@@ -143,7 +142,7 @@ impl User {
         Ok(())
     }
 
-    pub async fn load(id: String, db: &SqlitePool) -> anyhow::Result<Option<Self>> {
+    pub async fn load(id: String, db: &SqlitePool) -> crate::Result<Option<Self>> {
         debug!("attempting to load user {id}");
 
         let user = sqlx::query_as("select * from users where id = ?;")

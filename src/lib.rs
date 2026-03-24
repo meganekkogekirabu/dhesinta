@@ -14,7 +14,6 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use axum::http::StatusCode;
 use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
 
@@ -22,10 +21,11 @@ pub mod api;
 pub mod config;
 pub mod dictionary;
 pub mod entry;
+pub mod error;
 pub mod state;
 pub mod user;
 
-pub type Result<T> = std::result::Result<T, StatusCode>;
+pub type Result<T> = std::result::Result<T, crate::error::Error>;
 
 #[derive(Clone, Debug, Deserialize, Serialize, sqlx::Type)]
 #[sqlx(transparent)]
@@ -38,10 +38,10 @@ impl Default for Nanoid {
 }
 
 pub trait Database: Sized {
-    fn write(self, db: &SqlitePool) -> impl std::future::Future<Output = anyhow::Result<()>>;
+    fn write(self, db: &SqlitePool) -> impl std::future::Future<Output = crate::Result<()>>;
 
     fn load(
         id: String,
         db: &SqlitePool,
-    ) -> impl std::future::Future<Output = anyhow::Result<Option<Self>>>;
+    ) -> impl std::future::Future<Output = crate::Result<Option<Self>>>;
 }
