@@ -28,7 +28,7 @@ use crate::dictionary::{Dictionary, DictionaryVisibility};
 use crate::error::Error;
 use crate::{Database, Nanoid};
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Default, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DictPayload {
     name: String,
@@ -68,7 +68,7 @@ impl HttpModel for Dictionary {
                     Ok(response)
                 }
                 Err(e) => {
-                    error!("error serialising user: {e}");
+                    error!("error serialising dictionary: {e}");
                     Err(StatusCode::INTERNAL_SERVER_ERROR)
                 }
             },
