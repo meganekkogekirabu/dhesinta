@@ -33,6 +33,9 @@ pub enum Error {
 
     #[error("I/O error")]
     IO(#[from] std::io::Error),
+
+    #[error("Luau error")]
+    Luau(#[from] mlua::Error),
 }
 
 impl From<argonautica::Error> for Error {
