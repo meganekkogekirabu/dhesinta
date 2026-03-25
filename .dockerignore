@@ -1,0 +1,8 @@
+target
+.zed
+doc
+COPYING
+.git
+config.sample.toml
+db/*.sqlite3
+.venv
