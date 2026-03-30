@@ -2,5 +2,5 @@ target/
 .env
 .venv
 db/*.sqlite3
-db/*.sqlite3-journal
+db/*.sqlite3-*
 .DS_Store
