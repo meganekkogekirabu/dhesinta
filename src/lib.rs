@@ -22,7 +22,6 @@ pub mod config;
 pub mod dictionary;
 pub mod entry;
 pub mod error;
-pub mod luau;
 pub mod state;
 pub mod user;
 
