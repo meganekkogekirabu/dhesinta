@@ -8,7 +8,7 @@ import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
-import tomli_w  # type: ignore
+from tomli_w import dumps
 
 if os.name == "nt":
     print("This script does not support Windows.")
@@ -46,7 +46,7 @@ def prompt(field: str, default: str) -> str:
         input(f"{BOLD}{YELLOW}?{RESET} {BOLD}{field}{RESET} [default {default}]: ")
         or default
     )
-    sys.stdout.write(UP + CLEAR)
+    _ = sys.stdout.write(UP + CLEAR)
     print(f"{YELLOW}?{RESET} {field}: {BLUE}{response}{RESET}")
     return response
 
@@ -62,7 +62,7 @@ secret_key = "".join(secret_key)
 config = Config(db_url, net, secret_key)
 config = asdict(config)
 
-toml: str = tomli_w.dumps(config)
+toml = dumps(config)
 
 with open(config_file, "w") as file:
-    file.write(toml)
+    _ = file.write(toml)
