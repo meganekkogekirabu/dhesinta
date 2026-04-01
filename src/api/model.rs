@@ -7,11 +7,11 @@ use serde::Serialize;
 
 #[async_trait]
 pub trait HttpModel: crate::Database + Serialize {
-    async fn http_get(
+    async fn get(
         Path(id): Path<String>,
         mut session: AuthSession<crate::state::State>,
     ) -> Result<Response<String>, StatusCode> {
-        match Self::load(id, &mut session.backend).await {
+        match Self::database_get(id, &mut session.backend).await {
             Ok(Some(model)) => match serde_json::to_string(&model) {
                 Ok(model) => Ok(Response::new(model)),
                 Err(e) => {
@@ -24,11 +24,11 @@ pub trait HttpModel: crate::Database + Serialize {
         }
     }
 
-    async fn http_delete(
+    async fn delete(
         Path(id): Path<String>,
         mut session: AuthSession<crate::state::State>,
     ) -> StatusCode {
-        match Self::load(id.to_owned(), &mut session.backend).await {
+        match Self::database_get(id.to_owned(), &mut session.backend).await {
             Ok(Some(model)) => {
                 if model.owner() != session.user.unwrap().id {
                     return StatusCode::UNAUTHORIZED;
@@ -38,7 +38,7 @@ pub trait HttpModel: crate::Database + Serialize {
             Err(_) => return StatusCode::INTERNAL_SERVER_ERROR,
         }
 
-        if let Err(_) = Self::delete(id, &mut session.backend).await {
+        if let Err(_) = Self::database_delete(id, &mut session.backend).await {
             StatusCode::INTERNAL_SERVER_ERROR
         } else {
             StatusCode::NO_CONTENT
@@ -49,7 +49,7 @@ pub trait HttpModel: crate::Database + Serialize {
 
     type Payload;
 
-    async fn http_post(
+    async fn create(
         session: AuthSession<crate::state::State>,
         payload: Self::Payload,
     ) -> Result<Response<String>, StatusCode>;

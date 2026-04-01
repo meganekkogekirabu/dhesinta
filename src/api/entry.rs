@@ -49,7 +49,7 @@ struct EntryResponse<'a> {
 impl HttpModel for Entry {
     type Payload = Json<EntryPayload>;
 
-    async fn http_post(
+    async fn create(
         mut session: AuthSession<crate::state::State>,
         Json(payload): Self::Payload,
     ) -> Result<Response<String>, StatusCode> {
@@ -77,7 +77,7 @@ impl HttpModel for Entry {
 
         let entry = Arc::new(entry);
 
-        match entry.clone().write(&mut session.backend).await {
+        match entry.clone().database_write(&mut session.backend).await {
             Ok(_) => match serde_json::to_string(&entry) {
                 Ok(entry) => {
                     let mut response = Response::new(entry);
@@ -103,11 +103,11 @@ impl HttpModel for Entry {
         }
     }
 
-    async fn http_get(
+    async fn get(
         Path(id): Path<String>,
         mut session: AuthSession<crate::state::State>,
     ) -> Result<Response<String>, StatusCode> {
-        let entry = Entry::load(id, &mut session.backend)
+        let entry = Entry::database_get(id, &mut session.backend)
             .await
             .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 

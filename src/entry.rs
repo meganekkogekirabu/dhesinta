@@ -44,7 +44,7 @@ impl crate::Database for Entry {
         self.owner_id
     }
 
-    async fn write(&self, state: &mut crate::state::State) -> crate::Result<()> {
+    async fn database_write(&self, state: &mut crate::state::State) -> crate::Result<()> {
         let mut tx = state.db.begin().await?;
 
         let Nanoid(dictionary_id) = &self.dictionary_id;
@@ -78,7 +78,10 @@ impl crate::Database for Entry {
         Ok(())
     }
 
-    async fn load(id: String, state: &mut crate::state::State) -> crate::Result<Option<Self>> {
+    async fn database_get(
+        id: String,
+        state: &mut crate::state::State,
+    ) -> crate::Result<Option<Self>> {
         debug!("attempting to load entry {id}");
 
         let entry = sqlx::query_as("select * from entries where id = ?;")
@@ -107,7 +110,7 @@ impl crate::Database for Entry {
         Ok(entry)
     }
 
-    async fn delete(id: String, state: &mut crate::state::State) -> crate::Result<()> {
+    async fn database_delete(id: String, state: &mut crate::state::State) -> crate::Result<()> {
         debug!("attempting to delete entry {id}");
 
         let mut tx = state.db.begin().await?;

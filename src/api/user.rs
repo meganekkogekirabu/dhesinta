@@ -85,7 +85,7 @@ pub struct Registration {
 impl HttpModel for User {
     type Payload = Form<Registration>;
 
-    async fn http_post(
+    async fn create(
         mut session: AuthSession<crate::state::State>,
         Form(payload): Self::Payload,
     ) -> Result<Response<String>, StatusCode> {
@@ -98,7 +98,7 @@ impl HttpModel for User {
 
         let user = Arc::new(user);
 
-        match user.clone().write(&mut session.backend).await {
+        match user.clone().database_write(&mut session.backend).await {
             Err(Error::Database(e)) => {
                 if e.as_database_error().unwrap().is_unique_violation() {
                     Err(StatusCode::CONFLICT)
@@ -122,11 +122,11 @@ impl HttpModel for User {
         }
     }
 
-    async fn http_get(
+    async fn get(
         Path(id): Path<String>,
         mut session: AuthSession<crate::state::State>,
     ) -> Result<Response<String>, StatusCode> {
-        let user = User::load(id, &mut session.backend)
+        let user = User::database_get(id, &mut session.backend)
             .await
             .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 

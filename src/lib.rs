@@ -41,9 +41,12 @@ impl Default for Nanoid {
 pub trait Database: Sized {
     fn owner(self) -> Nanoid;
 
-    async fn write(&self, state: &mut crate::state::State) -> crate::Result<()>;
+    async fn database_write(&self, state: &mut crate::state::State) -> crate::Result<()>;
 
-    async fn load(id: String, state: &mut crate::state::State) -> crate::Result<Option<Self>>;
+    async fn database_get(
+        id: String,
+        state: &mut crate::state::State,
+    ) -> crate::Result<Option<Self>>;
 
-    async fn delete(id: String, state: &mut crate::state::State) -> crate::Result<()>;
+    async fn database_delete(id: String, state: &mut crate::state::State) -> crate::Result<()>;
 }

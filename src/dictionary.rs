@@ -60,7 +60,7 @@ impl crate::Database for Dictionary {
         self.owner_id
     }
 
-    async fn write(&self, state: &mut crate::state::State) -> crate::Result<()> {
+    async fn database_write(&self, state: &mut crate::state::State) -> crate::Result<()> {
         let mut tx = state.db.begin().await?;
 
         let visibility = self.visibility.as_str();
@@ -93,7 +93,10 @@ impl crate::Database for Dictionary {
         Ok(())
     }
 
-    async fn load(id: String, state: &mut crate::state::State) -> crate::Result<Option<Self>> {
+    async fn database_get(
+        id: String,
+        state: &mut crate::state::State,
+    ) -> crate::Result<Option<Self>> {
         debug!("attempting to load dictionary {id}");
 
         let dict = sqlx::query_as("select * from dictionaries where id = ?;")
@@ -104,7 +107,7 @@ impl crate::Database for Dictionary {
         Ok(dict)
     }
 
-    async fn delete(id: String, state: &mut crate::state::State) -> crate::Result<()> {
+    async fn database_delete(id: String, state: &mut crate::state::State) -> crate::Result<()> {
         debug!("attempting to delete dictionary {id}");
 
         let mut tx = state.db.begin().await?;

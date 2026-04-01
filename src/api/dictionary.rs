@@ -41,7 +41,7 @@ pub struct DictPayload {
 impl HttpModel for Dictionary {
     type Payload = Json<DictPayload>;
 
-    async fn http_post(
+    async fn create(
         mut session: AuthSession<crate::state::State>,
         Json(payload): Self::Payload,
     ) -> Result<Response<String>, StatusCode> {
@@ -59,7 +59,11 @@ impl HttpModel for Dictionary {
 
         let dictionary = Arc::new(dictionary);
 
-        match dictionary.clone().write(&mut session.backend).await {
+        match dictionary
+            .clone()
+            .database_write(&mut session.backend)
+            .await
+        {
             Ok(_) => match serde_json::to_string(&dictionary) {
                 Ok(dictionary) => {
                     let mut response = Response::new(dictionary);

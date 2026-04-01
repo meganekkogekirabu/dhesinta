@@ -33,17 +33,17 @@ use model::HttpModel;
 pub fn make() -> Router<State> {
     Router::new()
         // protected
-        .route("/dictionaries", post(Dictionary::http_post))
-        .route("/entries", post(Entry::http_post))
-        .route("/dictionaries/{id}", delete(Dictionary::http_delete))
-        .route("/entries/{id}", delete(Entry::http_delete))
+        .route("/dictionaries", post(Dictionary::create))
+        .route("/entries", post(Entry::create))
+        .route("/dictionaries/{id}", delete(Dictionary::delete))
+        .route("/entries/{id}", delete(Entry::delete))
         .route("/logout", get(user::logout))
         .route("/users/me", get(user::whoami))
         .route_layer(login_required!(State))
         // unprotected
-        .route("/dictionaries/{id}", get(Dictionary::http_get))
-        .route("/entries/{id}", get(Dictionary::http_get))
+        .route("/dictionaries/{id}", get(Dictionary::get))
+        .route("/entries/{id}", get(Dictionary::get))
         .route("/login", post(user::login))
-        .route("/users", post(User::http_post))
-        .route("/users/{id}", get(User::http_get))
+        .route("/users", post(User::create))
+        .route("/users/{id}", get(User::get))
 }

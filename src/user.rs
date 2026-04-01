@@ -103,7 +103,7 @@ impl crate::Database for User {
         self.id
     }
 
-    async fn write(&self, state: &mut crate::state::State) -> crate::Result<()> {
+    async fn database_write(&self, state: &mut crate::state::State) -> crate::Result<()> {
         let mut tx = state.db.begin().await?;
 
         let mut hasher = Hasher::new();
@@ -135,7 +135,7 @@ impl crate::Database for User {
         Ok(())
     }
 
-    async fn delete(id: String, state: &mut crate::state::State) -> crate::Result<()> {
+    async fn database_delete(id: String, state: &mut crate::state::State) -> crate::Result<()> {
         debug!("attempting to delete user {id}");
 
         let mut tx = state.db.begin().await?;
@@ -147,7 +147,10 @@ impl crate::Database for User {
         Ok(())
     }
 
-    async fn load(id: String, state: &mut crate::state::State) -> crate::Result<Option<Self>> {
+    async fn database_get(
+        id: String,
+        state: &mut crate::state::State,
+    ) -> crate::Result<Option<Self>> {
         debug!("attempting to load user {id}");
 
         let user = sqlx::query_as("select * from users where id = ?;")
