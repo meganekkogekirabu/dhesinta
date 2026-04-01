@@ -14,8 +14,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+use dhesinta::api;
 use dhesinta::config::Config;
-use dhesinta::{api, state};
+use dhesinta::state::State;
 
 mod app;
 use app::App;
@@ -24,7 +25,7 @@ use app::App;
 async fn main() -> dhesinta::Result<()> {
     env_logger::init();
     let config = Config::load()?;
-    let state = state::State::new(config).await?;
+    let state = State::new(config).await?;
     let app = App::new(state);
     app.serve().await?;
     Ok(())
