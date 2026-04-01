@@ -18,13 +18,13 @@ use axum::Router;
 use axum_login::AuthManagerLayerBuilder;
 use axum_login::tower_sessions::{Expiry, SessionManagerLayer};
 use dhesinta::config::NetConfig;
+use dhesinta::state::State;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::str::FromStr;
 use tower_sessions::cookie::{Key, time::Duration};
 use tower_sessions_sqlx_store::SqliteStore;
 
 use crate::api;
-use crate::state::State;
 
 pub struct App {
     state: State,
