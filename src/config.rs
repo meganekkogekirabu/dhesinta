@@ -48,7 +48,7 @@ impl Default for Config {
         let secret_key = Alphanumeric.sample_string(&mut rand::rng(), 32);
 
         Self {
-            db_url: "sqlite://./db/db.sqlite3".to_string(),
+            db_url: "sqlite:///app/db/db.sqlite3".to_string(),
             secret_key,
             net: NetConfig {
                 hostname: "0.0.0.0".into(),
