@@ -12,8 +12,11 @@ RUN apt-get install -y libclang-19-dev
 RUN rm -rf /var/lib/apt/lists/*
 RUN cargo chef cook --release --recipe-path recipe.json
 COPY . .
+
 ENV DATABASE_URL="sqlite://./db/db.sqlite3"
-RUN cargo install sqlx-cli
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/usr/local/cargo/git \
+    cargo install sqlx-cli --locked
 RUN sqlx database create
 RUN sqlx migrate run --source ./db/migrations/
 RUN cargo build --release
