@@ -332,3 +332,7 @@ components:
       type: apiKey
       in: cookie
       name: id
+
+servers:
+  - url: https://dhesinta.localhost
+    description: Local development server
