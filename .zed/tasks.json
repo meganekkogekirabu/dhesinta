@@ -4,8 +4,4 @@
     "command": "just r",
     "env": { "RUST_LOG": "debug" },
   },
-  {
-    "label": "Run server in container",
-    "command": "sudo just d 3000",
-  },
 ]
