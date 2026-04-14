@@ -1,3 +1,4 @@
-dhesinta.localhost {
-    reverse_proxy dhesinta:3000
-}
+dhesinta.localhost
+
+encode gzip
+reverse_proxy /api/v1/* dhesinta:3000
