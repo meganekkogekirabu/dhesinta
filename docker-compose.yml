@@ -5,6 +5,8 @@ services:
     restart: unless-stopped
     networks:
       - dhesinta
+    volumes:
+      - ./db:/app/db
 
   caddy:
     image: caddy:2
@@ -13,10 +15,10 @@ services:
     ports:
       - "80:80"
       - "443:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
     networks:
       - dhesinta
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
 
 networks:
   dhesinta:

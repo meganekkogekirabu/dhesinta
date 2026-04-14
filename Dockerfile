@@ -13,17 +13,10 @@ RUN rm -rf /var/lib/apt/lists/*
 RUN cargo chef cook --release --recipe-path recipe.json
 COPY . .
 
-ENV DATABASE_URL="sqlite://./db/db.sqlite3"
-RUN --mount=type=cache,target=/usr/local/cargo/registry \
-    --mount=type=cache,target=/usr/local/cargo/git \
-    cargo install sqlx-cli --locked
-RUN sqlx database create
-RUN sqlx migrate run --source ./db/migrations/
+ENV SQLX_OFFLINE=true
 RUN cargo build --release
 
 FROM debian:trixie-slim AS runtime
-ENV DATABASE_URL="sqlite://./db/db.sqlite3"
 WORKDIR /app
 COPY --from=builder /app/target/release/dhesinta /usr/local/bin/
-COPY --from=builder /app/db/ db/
 ENTRYPOINT [ "/usr/local/bin/dhesinta" ]
