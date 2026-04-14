@@ -1,5 +1,4 @@
 alias r := run
-alias d := docker
 
 default: release
 
@@ -17,7 +16,3 @@ config:
     pip install -r requirements.txt
     python3 configure.py
     cd ..
-
-docker port:
-    docker build --build-arg PORT={{ port }} -t dhesinta .
-    docker run -p {{ port }}:{{ port }} -it dhesinta
