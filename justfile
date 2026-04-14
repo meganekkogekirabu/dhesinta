@@ -1,7 +1,7 @@
 alias r := run
 alias d := docker
 
-default: config release
+default: release
 
 run:
     cargo watch --why -w src -x run
