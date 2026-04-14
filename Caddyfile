@@ -1,0 +1,3 @@
+dhesinta.localhost {
+    reverse_proxy dhesinta:3000
+}
