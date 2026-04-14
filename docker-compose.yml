@@ -1,0 +1,22 @@
+services:
+  dhesinta:
+    build: .
+    container_name: dhesinta-dhesinta
+    restart: unless-stopped
+    networks:
+      - dhesinta
+
+  caddy:
+    image: caddy:2
+    container_name: caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+    networks:
+      - dhesinta
+
+networks:
+  dhesinta:
