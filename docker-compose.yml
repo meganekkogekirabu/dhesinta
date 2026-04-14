@@ -1,7 +1,7 @@
 services:
   dhesinta:
     build: .
-    container_name: dhesinta-dhesinta
+    container_name: dhesinta
     restart: unless-stopped
     networks:
       - dhesinta
