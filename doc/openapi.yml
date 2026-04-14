@@ -131,7 +131,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Entry"
         "400":
-          description: Dictionary ID given is not valid
+          description: Entry ID given is not valid
         "500":
           description: Internal database error
   /api/v1/entries/{id}:
@@ -228,7 +228,7 @@ paths:
         "500":
           description: Internal database or serialisation failure
     delete:
-      description: Delete entry
+      description: Delete dictionary
       security:
         - cookieAuth: []
       responses:
@@ -237,7 +237,7 @@ paths:
         "401":
           description: Missing or invalid authorisation
         "404":
-          description: Requested entry does not exist
+          description: Requested dictionarydoes not exist
         "500":
           description: Internal session store or serialisation failure
 
