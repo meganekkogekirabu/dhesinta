@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf8 -*-
 
-import os
 import random
 import string
 import sys
@@ -10,14 +9,8 @@ from pathlib import Path
 
 from tomli_w import dumps
 
-if os.name == "nt":
-    print("This script does not support Windows.")
-    sys.exit(1)
-
-home = Path.home()
-config_dir = home / ".config" / "dhesinta"
-config_dir.mkdir(parents=True, exist_ok=True)
-config_file = config_dir / "config.toml"
+cwd = Path.cwd().parent
+config_file = cwd / "config.toml"
 
 
 @dataclass
