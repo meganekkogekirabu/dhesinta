@@ -14,13 +14,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+use crate::Nanoid;
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use log::{debug, error};
 use serde::{Deserialize, Serialize};
-use sqlx::FromRow;
-
-use crate::Nanoid;
+use sqlx::{FromRow, QueryBuilder};
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize, sqlx::Type)]
 #[serde(rename_all = "snake_case")]
@@ -54,8 +53,16 @@ pub struct Dictionary {
     pub updated_at: DateTime<Utc>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub struct Query {
+    owner: Option<Nanoid>,
+}
+
 #[async_trait]
 impl crate::Database for Dictionary {
+    type Query = Query;
+
     fn owner(self) -> Nanoid {
         self.owner_id
     }
@@ -105,6 +112,28 @@ impl crate::Database for Dictionary {
             .await?;
 
         Ok(dict)
+    }
+
+    async fn database_get_all(
+        query: Self::Query,
+        state: &mut crate::state::State,
+    ) -> crate::Result<Vec<Self>> {
+        let mut db_query = QueryBuilder::new("select * from dictionaries where ");
+
+        if let Some(owner) = query.owner {
+            db_query.push("owner_id = ").push_bind(owner);
+        }
+
+        let dicts = db_query
+            .build_query_as()
+            .fetch_all(&state.db)
+            .await
+            .map_err(|e| {
+                error!("could not complete query: {e}");
+                e
+            })?;
+
+        Ok(dicts)
     }
 
     async fn database_delete(id: String, state: &mut crate::state::State) -> crate::Result<()> {

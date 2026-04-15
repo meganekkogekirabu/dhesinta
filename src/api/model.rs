@@ -15,7 +15,7 @@
  */
 
 use async_trait::async_trait;
-use axum::extract::Path;
+use axum::extract::{Path, Query};
 use axum::http::{Response, StatusCode};
 use axum_login::AuthSession;
 use log::error;
@@ -36,6 +36,22 @@ pub trait HttpModel: crate::Database + Serialize {
                 }
             },
             Ok(None) => Err(StatusCode::NOT_FOUND),
+            Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+        }
+    }
+
+    async fn get_all(
+        Query(query): Query<<Self as crate::Database>::Query>,
+        mut session: AuthSession<crate::state::State>,
+    ) -> Result<Response<String>, StatusCode> {
+        match Self::database_get_all(query, &mut session.backend).await {
+            Ok(all) => match serde_json::to_string(&all) {
+                Ok(all) => Ok(Response::new(all)),
+                Err(e) => {
+                    error!("could not serialise query response: {e}");
+                    Err(StatusCode::INTERNAL_SERVER_ERROR)
+                }
+            },
             Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
         }
     }

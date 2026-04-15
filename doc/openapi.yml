@@ -10,7 +10,7 @@ info:
 paths:
   /api/v1/users:
     post:
-      summary: Create a new user
+      description: Create a new user
       requestBody:
         description: Credentials to create the user with
         content:
@@ -30,7 +30,7 @@ paths:
           description: Internal database failure
   /api/v1/users/me:
     get:
-      summary: Get information for currently logged in user
+      description: Get information for currently logged in user
       security:
         - cookieAuth: []
       responses:
@@ -114,6 +114,24 @@ paths:
         "401":
           description: Missing or invalid authorisation
   /api/v1/entries:
+    get:
+      description: Query entries based on properties
+      responses:
+        "200":
+          description: Successful query
+        "500":
+          description: Internal database or serialisation error
+      parameters:
+        - in: query
+          name: owner
+          schema:
+            type: string
+          description: Query by owner
+        - in: query
+          name: dictionary
+          schema:
+            type: string
+          description: Query by dictionary
     post:
       security:
         - cookieAuth: []
@@ -169,6 +187,19 @@ paths:
         "500":
           description: Internal session store or serialisation failure
   /api/v1/dictionaries:
+    get:
+      description: Query dictionaries based on properties
+      responses:
+        "200":
+          description: Successful query
+        "500":
+          description: Internal database or serialisation error
+      parameters:
+        - in: query
+          name: owner
+          schema:
+            type: string
+          description: Query by owner
     post:
       security:
         - cookieAuth: []

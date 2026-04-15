@@ -38,8 +38,17 @@ pub struct Entry {
     pub fields: Arc<Vec<Field>>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub struct Query {
+    owner: Option<Nanoid>,
+    dictionary: Option<Nanoid>,
+}
+
 #[async_trait]
 impl crate::Database for Entry {
+    type Query = Query;
+
     fn owner(self) -> Nanoid {
         self.owner_id
     }
@@ -108,6 +117,32 @@ impl crate::Database for Entry {
         });
 
         Ok(entry)
+    }
+
+    async fn database_get_all(
+        query: Self::Query,
+        state: &mut crate::state::State,
+    ) -> crate::Result<Vec<Self>> {
+        let mut db_query = QueryBuilder::new("select * from dictionaries where ");
+
+        if let Some(owner) = query.owner {
+            db_query.push("owner_id = ").push_bind(owner);
+        }
+
+        if let Some(dictionary) = query.dictionary {
+            db_query.push("dictionary_id = ?").push_bind(dictionary);
+        }
+
+        let entries = db_query
+            .build_query_as()
+            .fetch_all(&state.db)
+            .await
+            .map_err(|e| {
+                error!("could not complete query: {e}");
+                e
+            })?;
+
+        Ok(entries)
     }
 
     async fn database_delete(id: String, state: &mut crate::state::State) -> crate::Result<()> {
