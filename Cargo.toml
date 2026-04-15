@@ -9,7 +9,6 @@ async-trait = "0.1.89"
 axum = { version = "0.8.8", features = ["macros", "query"] }
 axum-login = "0.18.0"
 chrono = { version = "0.4.44", features = ["alloc", "serde"] }
-confy = "2.0.0"
 env_logger = "0.11.9"
 log = "0.4.29"
 nanoid = "0.4.0"
@@ -19,5 +18,6 @@ serde_json = "1.0.149"
 sqlx = { version = "0.8.6", features = ["chrono", "migrate", "runtime-tokio", "sqlite"] }
 thiserror = "2.0.18"
 tokio = { version = "1.50.0", features = ["full"] }
+toml = "1.1.2"
 tower-sessions = { version = "0.14.0", default-features = false, features = ["signed"] }
 tower-sessions-sqlx-store = { version = "0.15.0", features = ["sqlite"] }

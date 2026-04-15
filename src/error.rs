@@ -19,9 +19,6 @@ pub enum Error {
     #[error("database error")]
     Database(#[from] sqlx::Error),
 
-    #[error("error loading config")]
-    Config(#[from] confy::ConfyError),
-
     #[error("database migration error")]
     Migration(#[from] sqlx::migrate::MigrateError),
 
@@ -33,6 +30,12 @@ pub enum Error {
 
     #[error("I/O error")]
     IO(#[from] std::io::Error),
+
+    #[error("TOML deserialisation error")]
+    TomlDes(#[from] toml::de::Error),
+
+    #[error("TOML serialisation error")]
+    TomlSer(#[from] toml::ser::Error),
 }
 
 impl From<argonautica::Error> for Error {

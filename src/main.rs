@@ -24,7 +24,7 @@ use app::App;
 #[tokio::main]
 async fn main() -> dhesinta::Result<()> {
     env_logger::init();
-    let config = Config::load()?;
+    let config = Config::load().await?;
     let state = State::new(config).await?;
     let app = App::new(state);
     app.serve().await?;
