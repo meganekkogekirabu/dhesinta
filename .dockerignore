@@ -3,7 +3,6 @@ target
 doc
 COPYING
 .git
-config.sample.toml
 db/*.sqlite3
 db/*.sqlite3-*
 .venv
