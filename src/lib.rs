@@ -25,7 +25,7 @@ pub mod error;
 pub mod state;
 pub mod user;
 
-pub type Result<T> = std::result::Result<T, crate::error::Error>;
+pub type Result<T> = std::result::Result<T, error::Error>;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize, sqlx::Type)]
 #[sqlx(transparent)]
@@ -43,21 +43,21 @@ pub trait DatabaseModel: Sized {
 
     fn owner(self) -> Nanoid;
 
-    async fn database_write(&self, state: &mut crate::state::State) -> crate::Result<()>;
+    async fn database_write(&self, state: &mut state::State) -> Result<()>;
 
     async fn database_get(
         id: String,
-        state: &mut crate::state::State,
-    ) -> crate::Result<Option<Self>>;
+        state: &mut state::State,
+    ) -> Result<Option<Self>>;
 
     // stupid hack of an implementation, but we don't need database_get_all for users
     #[allow(unused_variables)]
     async fn database_query(
         query: Self::Query,
-        state: &mut crate::state::State,
-    ) -> crate::Result<Vec<Self>> {
+        state: &mut state::State,
+    ) -> Result<Vec<Self>> {
         Ok(vec![])
     }
 
-    async fn database_delete(id: String, state: &mut crate::state::State) -> crate::Result<()>;
+    async fn database_delete(id: String, state: &mut state::State) -> Result<()>;
 }
