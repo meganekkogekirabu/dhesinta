@@ -1,6 +1,7 @@
 mod dictionary;
 mod entry;
 mod user;
+pub mod model;
 
 pub use dictionary::Dictionary;
 pub use dictionary::DictionaryVisibility;

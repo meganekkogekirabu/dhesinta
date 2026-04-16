@@ -60,7 +60,7 @@ pub struct Query {
 }
 
 #[async_trait]
-impl crate::DatabaseModel for Dictionary {
+impl crate::database::model::DatabaseModel for Dictionary {
     type Query = Query;
 
     fn owner(self) -> Nanoid {

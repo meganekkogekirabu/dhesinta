@@ -26,7 +26,8 @@ use axum::routing::{delete, get, post};
 use crate::api::model::HttpModel;
 use crate::database::{Dictionary, DictionaryVisibility};
 use crate::error::Error;
-use crate::{DatabaseModel, Nanoid};
+use crate::Nanoid;
+use crate::database::model::DatabaseModel;
 
 #[derive(Debug, Default, Deserialize)]
 #[serde(rename_all = "camelCase")]

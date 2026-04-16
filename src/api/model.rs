@@ -23,7 +23,7 @@ use log::error;
 use serde::Serialize;
 
 #[async_trait]
-pub trait HttpModel: crate::DatabaseModel + Serialize {
+pub trait HttpModel: crate::database::model::DatabaseModel + Serialize {
     async fn get(
         Path(id): Path<String>,
         mut session: AuthSession<crate::state::State>,
@@ -42,7 +42,7 @@ pub trait HttpModel: crate::DatabaseModel + Serialize {
     }
 
     async fn query(
-        Query(query): Query<<Self as crate::DatabaseModel>::Query>,
+        Query(query): Query<<Self as crate::database::model::DatabaseModel>::Query>,
         mut session: AuthSession<crate::state::State>,
     ) -> Result<Response<String>, StatusCode> {
         match Self::database_query(query, &mut session.backend).await {

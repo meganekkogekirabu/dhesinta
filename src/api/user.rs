@@ -17,7 +17,7 @@
 use async_trait::async_trait;
 use axum::extract::Path;
 use axum::http::Response;
-use axum::{Form, http::StatusCode, Router};
+use axum::{http::StatusCode, Form, Router};
 use axum_login::{login_required, AuthSession};
 use log::error;
 use serde::Deserialize;
@@ -26,7 +26,8 @@ use axum::routing::{delete, get, post};
 use crate::api::model::HttpModel;
 use crate::error::Error;
 use crate::database::{Credentials, User};
-use crate::{DatabaseModel, Nanoid};
+use crate::Nanoid;
+use crate::database::model::DatabaseModel;
 
 impl User {
     pub async fn login(
