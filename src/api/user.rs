@@ -145,10 +145,10 @@ impl HttpModel for User {
 
     fn make() -> Router<State> {
         Router::new()
-            .route("/", post(Self::create))
             .route("/", delete(Self::delete))
             .route("/logout", get(Self::logout))
             .route_layer(login_required!(State))
+            .route("/", post(Self::create))
             .route("/{id}", get(Self::get))
             .route("/login", post(Self::login))
             .route("/me", get(Self::whoami))
