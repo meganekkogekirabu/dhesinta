@@ -41,7 +41,7 @@ pub trait HttpModel: crate::Database + Serialize {
         }
     }
 
-    async fn get_all(
+    async fn query(
         Query(query): Query<<Self as crate::Database>::Query>,
         mut session: AuthSession<crate::state::State>,
     ) -> Result<Response<String>, StatusCode> {

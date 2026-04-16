@@ -93,7 +93,7 @@ impl HttpModel for Dictionary {
             .route("/", post(Self::create))
             .route("/", delete(Self::delete))
             .route_layer(login_required!(State))
-            .route("/", get(Self::get_all))
+            .route("/", get(Self::query))
             .route("/{id}", get(Self::get))
     }
 }
