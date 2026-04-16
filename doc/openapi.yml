@@ -3,7 +3,7 @@ info:
   contact:
     name: Madeleine Choi
     email: gankiann.niu@gmail.com
-  version: "0.1.0"
+  version: "0.2.0"
   title: "Dhesinta"
   description: Dictionary management software
 
@@ -79,7 +79,7 @@ paths:
           description: Requested user does not exist
         "500":
           description: Internal session store or serialisation failure
-  /api/v1/login:
+  /api/v1/users/login:
     post:
       description: Initialise new user session
       requestBody:
@@ -98,7 +98,7 @@ paths:
                 example: id=1234; HttpOnly; SameSite=Strict; Path=/; Max-Age=86400
         "401":
           description: Incorrect credentials
-  /api/v1/logout:
+  /api/v1/users/logout:
     get:
       description: End user session
       security:
