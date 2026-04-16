@@ -19,11 +19,9 @@ use serde::{Deserialize, Serialize};
 
 pub mod api;
 pub mod config;
-pub mod dictionary;
-pub mod entry;
 pub mod error;
 pub mod state;
-pub mod user;
+pub mod database;
 
 pub type Result<T> = std::result::Result<T, error::Error>;
 

@@ -25,9 +25,8 @@ use std::sync::Arc;
 use axum::routing::{delete, get, post};
 use crate::api::model::HttpModel;
 use crate::error::Error;
-use crate::user::{Credentials, User};
+use crate::database::{Credentials, User};
 use crate::{DatabaseModel, Nanoid};
-use crate::state::State;
 
 impl User {
     pub async fn login(
@@ -143,11 +142,11 @@ impl HttpModel for User {
         }
     }
 
-    fn make() -> Router<State> {
+    fn make() -> Router<crate::state::State> {
         Router::new()
             .route("/", delete(Self::delete))
             .route("/logout", get(Self::logout))
-            .route_layer(login_required!(State))
+            .route_layer(login_required!(crate::state::State))
             .route("/", post(Self::create))
             .route("/{id}", get(Self::get))
             .route("/login", post(Self::login))

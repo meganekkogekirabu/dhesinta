@@ -24,10 +24,9 @@ use serde::Deserialize;
 use std::sync::Arc;
 use axum::routing::{delete, get, post};
 use crate::api::model::HttpModel;
-use crate::dictionary::{Dictionary, DictionaryVisibility};
+use crate::database::{Dictionary, DictionaryVisibility};
 use crate::error::Error;
 use crate::{DatabaseModel, Nanoid};
-use crate::state::State;
 
 #[derive(Debug, Default, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -88,11 +87,11 @@ impl HttpModel for Dictionary {
         }
     }
 
-    fn make() -> Router<State> {
+    fn make() -> Router<crate::state::State> {
         Router::new()
             .route("/", post(Self::create))
             .route("/", delete(Self::delete))
-            .route_layer(login_required!(State))
+            .route_layer(login_required!(crate::state::State))
             .route("/", get(Self::query))
             .route("/{id}", get(Self::get))
     }

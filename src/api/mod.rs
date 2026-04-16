@@ -16,17 +16,14 @@
 
 use axum::Router;
 use crate::api::model::HttpModel;
-use crate::dictionary::Dictionary;
-use crate::entry::Entry;
-use crate::state::State;
-use crate::user::User;
+use crate::database::*;
 
 mod dictionary;
 mod entry;
 mod model;
 mod user;
 
-pub fn make() -> Router<State> {
+pub fn make() -> Router<crate::state::State> {
     Router::new()
         .nest("/dictionaries", Dictionary::make())
         .nest("/entries", Entry::make())
