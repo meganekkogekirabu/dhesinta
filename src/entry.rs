@@ -46,7 +46,7 @@ pub struct Query {
 }
 
 #[async_trait]
-impl crate::Database for Entry {
+impl crate::DatabaseModel for Entry {
     type Query = Query;
 
     fn owner(self) -> Nanoid {

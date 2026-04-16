@@ -98,7 +98,7 @@ impl AuthnBackend for crate::state::State {
 }
 
 #[async_trait]
-impl crate::Database for User {
+impl crate::DatabaseModel for User {
     type Query = ();
 
     fn owner(self) -> Nanoid {

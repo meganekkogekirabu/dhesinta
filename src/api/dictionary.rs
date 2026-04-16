@@ -26,7 +26,7 @@ use axum::routing::{delete, get, post};
 use crate::api::model::HttpModel;
 use crate::dictionary::{Dictionary, DictionaryVisibility};
 use crate::error::Error;
-use crate::{Database, Nanoid};
+use crate::{DatabaseModel, Nanoid};
 use crate::state::State;
 
 #[derive(Debug, Default, Deserialize)]

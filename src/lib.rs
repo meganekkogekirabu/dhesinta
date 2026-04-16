@@ -38,7 +38,7 @@ impl Default for Nanoid {
 }
 
 #[async_trait]
-pub trait Database: Sized {
+pub trait DatabaseModel: Sized {
     type Query: Send + for<'a> Deserialize<'a>;
 
     fn owner(self) -> Nanoid;
