@@ -45,7 +45,7 @@ pub trait HttpModel: crate::Database + Serialize {
         Query(query): Query<<Self as crate::Database>::Query>,
         mut session: AuthSession<crate::state::State>,
     ) -> Result<Response<String>, StatusCode> {
-        match Self::database_get_all(query, &mut session.backend).await {
+        match Self::database_query(query, &mut session.backend).await {
             Ok(all) => match serde_json::to_string(&all) {
                 Ok(all) => Ok(Response::new(all)),
                 Err(e) => {

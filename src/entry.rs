@@ -119,7 +119,7 @@ impl crate::Database for Entry {
         Ok(entry)
     }
 
-    async fn database_get_all(
+    async fn database_query(
         query: Self::Query,
         state: &mut crate::state::State,
     ) -> crate::Result<Vec<Self>> {

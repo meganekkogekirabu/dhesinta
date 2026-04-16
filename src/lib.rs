@@ -52,7 +52,7 @@ pub trait Database: Sized {
 
     // stupid hack of an implementation, but we don't need database_get_all for users
     #[allow(unused_variables)]
-    async fn database_get_all(
+    async fn database_query(
         query: Self::Query,
         state: &mut crate::state::State,
     ) -> crate::Result<Vec<Self>> {
