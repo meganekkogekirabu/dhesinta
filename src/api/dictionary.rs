@@ -15,18 +15,19 @@
  */
 
 use async_trait::async_trait;
-use axum::Json;
+use axum::{Json, Router};
 use axum::http::{Response, StatusCode};
-use axum_login::AuthSession;
+use axum_login::{login_required, AuthSession};
 use chrono::Utc;
 use log::error;
 use serde::Deserialize;
 use std::sync::Arc;
-
+use axum::routing::{delete, get, post};
 use crate::api::model::HttpModel;
 use crate::dictionary::{Dictionary, DictionaryVisibility};
 use crate::error::Error;
 use crate::{Database, Nanoid};
+use crate::state::State;
 
 #[derive(Debug, Default, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -85,5 +86,14 @@ impl HttpModel for Dictionary {
             }
             Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
         }
+    }
+
+    fn make() -> Router<State> {
+        Router::new()
+            .route("/", post(Self::create))
+            .route("/", delete(Self::delete))
+            .route_layer(login_required!(State))
+            .route("/", get(Self::get_all))
+            .route("/{id}", get(Self::get))
     }
 }

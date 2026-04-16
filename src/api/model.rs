@@ -17,6 +17,7 @@
 use async_trait::async_trait;
 use axum::extract::{Path, Query};
 use axum::http::{Response, StatusCode};
+use axum::Router;
 use axum_login::AuthSession;
 use log::error;
 use serde::Serialize;
@@ -85,4 +86,6 @@ pub trait HttpModel: crate::Database + Serialize {
         session: AuthSession<crate::state::State>,
         payload: Self::Payload,
     ) -> Result<Response<String>, StatusCode>;
+
+    fn make() -> Router<crate::state::State>;
 }

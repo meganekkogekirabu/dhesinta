@@ -17,17 +17,19 @@
 use async_trait::async_trait;
 use axum::extract::{Json, Path};
 use axum::http::{Response, StatusCode};
-use axum_login::AuthSession;
+use axum_login::{login_required, AuthSession};
 use chrono::Utc;
 use log::error;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
-
+use axum::Router;
+use axum::routing::{delete, get, post};
 use crate::api::model::HttpModel;
 use crate::entry::{Entry, Field};
 use crate::error::Error;
 use crate::{Database, Nanoid};
+use crate::state::State;
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -47,6 +49,29 @@ struct EntryResponse<'a> {
 
 #[async_trait]
 impl HttpModel for Entry {
+    async fn get(
+        Path(id): Path<String>,
+        mut session: AuthSession<crate::state::State>,
+    ) -> Result<Response<String>, StatusCode> {
+        let entry = Entry::database_get(id, &mut session.backend)
+            .await
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+        let entry = entry.ok_or(StatusCode::NOT_FOUND)?;
+
+        let fields = entry.fields.clone();
+        let fields: HashMap<_, _> = fields.iter().map(|f| (&f.key, &f.value)).collect();
+
+        let entry = EntryResponse { fields, entry };
+
+        let entry = serde_json::to_string(&entry).map_err(|e| {
+            error!("could not serialise entry: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+        Ok(Response::new(entry))
+    }
+
     type Payload = Json<EntryPayload>;
 
     async fn create(
@@ -103,26 +128,12 @@ impl HttpModel for Entry {
         }
     }
 
-    async fn get(
-        Path(id): Path<String>,
-        mut session: AuthSession<crate::state::State>,
-    ) -> Result<Response<String>, StatusCode> {
-        let entry = Entry::database_get(id, &mut session.backend)
-            .await
-            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-
-        let entry = entry.ok_or(StatusCode::NOT_FOUND)?;
-
-        let fields = entry.fields.clone();
-        let fields: HashMap<_, _> = fields.iter().map(|f| (&f.key, &f.value)).collect();
-
-        let entry = EntryResponse { fields, entry };
-
-        let entry = serde_json::to_string(&entry).map_err(|e| {
-            error!("could not serialise entry: {e}");
-            StatusCode::INTERNAL_SERVER_ERROR
-        })?;
-
-        Ok(Response::new(entry))
+    fn make() -> Router<State> {
+        Router::new()
+            .route("/", post(Self::create))
+            .route("/", delete(Self::delete))
+            .route_layer(login_required!(State))
+            .route("/", get(Self::get_all))
+            .route("/{id}", get(Self::get))
     }
 }

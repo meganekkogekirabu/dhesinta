@@ -15,9 +15,7 @@
  */
 
 use axum::Router;
-use axum::routing::{delete, get, post};
-use axum_login::login_required;
-
+use crate::api::model::HttpModel;
 use crate::dictionary::Dictionary;
 use crate::entry::Entry;
 use crate::state::State;
@@ -28,24 +26,9 @@ mod entry;
 mod model;
 mod user;
 
-use model::HttpModel;
-
 pub fn make() -> Router<State> {
     Router::new()
-        // protected
-        .route("/dictionaries", post(Dictionary::create))
-        .route("/dictionaries/{id}", delete(Dictionary::delete))
-        .route("/entries", post(Entry::create))
-        .route("/entries/{id}", delete(Entry::delete))
-        .route("/logout", get(User::logout))
-        .route("/users/me", get(User::whoami))
-        .route_layer(login_required!(State))
-        // unprotected
-        .route("/dictionaries", get(Dictionary::get_all))
-        .route("/dictionaries/{id}", get(Dictionary::get))
-        .route("/entries", get(Entry::get_all))
-        .route("/entries/{id}", get(Entry::get))
-        .route("/login", post(User::login))
-        .route("/users", post(User::create))
-        .route("/users/{id}", get(User::get))
+        .nest("/dictionaries", Dictionary::make())
+        .nest("/entries", Entry::make())
+        .nest("/users", User::make())
 }

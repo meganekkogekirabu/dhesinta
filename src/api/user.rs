@@ -17,16 +17,17 @@
 use async_trait::async_trait;
 use axum::extract::Path;
 use axum::http::Response;
-use axum::{Form, http::StatusCode};
-use axum_login::AuthSession;
+use axum::{Form, http::StatusCode, Router};
+use axum_login::{login_required, AuthSession};
 use log::error;
 use serde::Deserialize;
 use std::sync::Arc;
-
+use axum::routing::{delete, get, post};
 use crate::api::model::HttpModel;
 use crate::error::Error;
 use crate::user::{Credentials, User};
 use crate::{Database, Nanoid};
+use crate::state::State;
 
 impl User {
     pub async fn login(
@@ -85,6 +86,24 @@ pub struct Registration {
 
 #[async_trait]
 impl HttpModel for User {
+    async fn get(
+        Path(id): Path<String>,
+        mut session: AuthSession<crate::state::State>,
+    ) -> Result<Response<String>, StatusCode> {
+        let user = User::database_get(id, &mut session.backend)
+            .await
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+        let user = user.ok_or(StatusCode::NOT_FOUND)?;
+
+        let user = serde_json::to_string(&user).map_err(|e| {
+            error!("could not serialise user: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+        Ok(Response::new(user))
+    }
+
     type Payload = Form<Registration>;
 
     async fn create(
@@ -124,21 +143,14 @@ impl HttpModel for User {
         }
     }
 
-    async fn get(
-        Path(id): Path<String>,
-        mut session: AuthSession<crate::state::State>,
-    ) -> Result<Response<String>, StatusCode> {
-        let user = User::database_get(id, &mut session.backend)
-            .await
-            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-
-        let user = user.ok_or(StatusCode::NOT_FOUND)?;
-
-        let user = serde_json::to_string(&user).map_err(|e| {
-            error!("could not serialise user: {e}");
-            StatusCode::INTERNAL_SERVER_ERROR
-        })?;
-
-        Ok(Response::new(user))
+    fn make() -> Router<State> {
+        Router::new()
+            .route("/", post(Self::create))
+            .route("/", delete(Self::delete))
+            .route("/logout", get(Self::logout))
+            .route_layer(login_required!(State))
+            .route("/{id}", get(Self::get))
+            .route("/login", post(Self::login))
+            .route("/me", get(Self::whoami))
     }
 }
