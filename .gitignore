@@ -4,5 +4,4 @@ target/
 db/*.sqlite3
 db/*.sqlite3-*
 .DS_Store
-.sqlx
 config.toml

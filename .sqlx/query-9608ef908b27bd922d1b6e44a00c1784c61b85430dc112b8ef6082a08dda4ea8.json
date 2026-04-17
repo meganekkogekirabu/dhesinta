@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "insert into entries (\n                id, owner_id, dictionary_id, word, created_at, updated_at\n            ) values (?, ?, ?, ?, ?, ?);",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 6
+    },
+    "nullable": []
+  },
+  "hash": "9608ef908b27bd922d1b6e44a00c1784c61b85430dc112b8ef6082a08dda4ea8"
+}
