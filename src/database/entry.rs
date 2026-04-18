@@ -123,15 +123,24 @@ impl crate::database::model::DatabaseModel for Entry {
         query: Self::Query,
         state: &mut crate::state::State,
     ) -> crate::Result<Vec<Self>> {
-        let mut db_query = QueryBuilder::new("select * from dictionaries where ");
+        let mut db_query = QueryBuilder::new("select * from entries");
+        let mut has_filter = false;
 
         if let Some(owner) = query.owner {
-            db_query.push("owner_id = ").push_bind(owner);
+            db_query.push(" where owner_id = ").push_bind(owner);
+            has_filter = true;
         }
 
         if let Some(dictionary) = query.dictionary {
-            db_query.push("dictionary_id = ?").push_bind(dictionary);
+            if has_filter {
+                db_query.push(" and dictionary_id = ");
+            } else {
+                db_query.push(" where dictionary_id = ");
+            }
+            db_query.push_bind(dictionary);
         }
+
+        db_query.push(" order by updated_at desc");
 
         let entries = db_query
             .build_query_as()
@@ -153,6 +162,8 @@ impl crate::database::model::DatabaseModel for Entry {
         sqlx::query!("delete from entries where id = ?;", id)
             .execute(&mut *tx)
             .await?;
+
+        tx.commit().await?;
 
         Ok(())
     }

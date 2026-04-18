@@ -118,11 +118,12 @@ impl crate::database::model::DatabaseModel for Dictionary {
         query: Self::Query,
         state: &mut crate::state::State,
     ) -> crate::Result<Vec<Self>> {
-        let mut db_query = QueryBuilder::new("select * from dictionaries where ");
+        let mut db_query = QueryBuilder::new("select * from dictionaries");
 
         if let Some(owner) = query.owner {
-            db_query.push("owner_id = ").push_bind(owner);
+            db_query.push(" where owner_id = ").push_bind(owner);
         }
+        db_query.push(" order by updated_at desc");
 
         let dicts = db_query
             .build_query_as()
