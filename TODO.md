@@ -3,6 +3,7 @@ Features
 
 - [ ] Testing suite
 - [ ] Lua functionality
+- [ ] DICT protocol implementation
 
 
 Fixes
